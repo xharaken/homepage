@@ -1,0 +1,32 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml"> 
+  <head> 
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/> 
+    <script type="text/javascript"> 
+    //<![CDATA[
+    function onLoad() {
+      var xmlhttp = false;
+      if(typeof ActiveXObject != "undefined"){
+        try {
+          xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+        } catch (e) {
+          xmlhttp = false;
+        }
+      }
+      if(!xmlhttp && typeof XMLHttpRequest != "undefined") {
+        xmlhttp = new XMLHttpRequest();
+      }
+ 
+      xmlhttp.open("GET", "./xhr2.html", false);
+      xmlhttp.onreadystatechange = function() {
+        window.alert("readyState の値 : " + xmlhttp.readyState + " statusの値 : " + xmlhttp.status);
+      }
+      xmlhttp.send(null);
+    }
+    //]]>
+    </script> 
+  </head> 
+  <body onLoad="onLoad()"> 
+    <div id="disp"></div> 
+  </body> 
+</html> 

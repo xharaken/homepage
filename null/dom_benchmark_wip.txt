@@ -1,0 +1,220 @@
+==== Attribute getters on HTMLElement ====
+div.id: 466 ms
+div.title: 455 ms
+div.lang: 441 ms
+div.dir: 440 ms
+div.className: 451 ms
+div.classList: 1130 ms
+div.tabIndex: 459 ms
+div.draggable: 445 ms
+div.webkitdropzone: 444 ms
+div.hidden: 442 ms
+div.accessKey: 446 ms
+div.children: 470 ms
+div.isContentEditable: 469 ms
+div.spellcheck: 444 ms
+div.itemScope: 397 ms
+div.itemType: 397 ms
+div.itemId: 400 ms
+div.itemRef: 400 ms
+div.itemProp: 400 ms
+div.properties: 400 ms
+div.titleDisplayString: 400 ms
+
+==== Attribute setters on HTMLElement ====
+div.id = undefined: 1332 ms
+div.title = undefined: 1329 ms
+div.lang = undefined: 4532 ms
+div.dir = undefined: 3715 ms
+div.className = undefined: 1481 ms
+div.classList = undefined: 722 ms
+div.tabIndex = undefined: 1982 ms
+div.draggable = undefined: 1500 ms
+div.webkitdropzone = undefined: 1338 ms
+div.hidden = undefined: 821 ms
+div.accessKey = undefined: 1356 ms
+div.children = undefined: 746 ms
+div.isContentEditable = undefined: 777 ms
+div.spellcheck = undefined: 988 ms
+div.itemScope = undefined: 597 ms
+div.itemType = undefined: 591 ms
+div.itemId = undefined: 591 ms
+div.itemRef = undefined: 592 ms
+div.itemProp = undefined: 590 ms
+div.properties = undefined: 583 ms
+div.titleDisplayString = undefined: 594 ms
+
+==== Attribute getters on Element ====
+div.tagName: 458 ms
+div.style: 456 ms
+div.offsetLeft: 461 ms
+div.offsetTop: 464 ms
+div.offsetWidth: 480 ms
+div.offsetHeight: 458 ms
+div.offsetParent: 479 ms
+div.clientLeft: 463 ms
+div.clientTop: 468 ms
+div.clientWidth: 477 ms
+div.clientHeight: 481 ms
+div.scrollLeft: 465 ms
+div.scrollTop: 467 ms
+div.scrollWidth: 462 ms
+div.scrollHeight: 470 ms
+div.dataset: 1156 ms
+div.firstElementChild: 463 ms
+div.lastElementChild: 445 ms
+div.previousElementSibling: 459 ms
+div.nextElementSibling: 464 ms
+div.childElementCount: 443 ms
+div.innerText: 499 ms
+div.onabort: 466 ms
+div.onblur: 475 ms
+div.onchange: 461 ms
+div.onclick: 458 ms
+div.oncontextmenu: 462 ms
+div.ondblclick: 457 ms
+div.ondrag: 457 ms
+div.ondragend: 457 ms
+div.ondragenter: 465 ms
+div.ondragleave: 486 ms
+div.ondragover: 481 ms
+div.ondragstart: 480 ms
+div.ondrop: 477 ms
+div.onerror: 455 ms
+div.onfocus: 530 ms
+div.oninput: 463 ms
+div.oninvalid: 509 ms
+div.onkeydown: 483 ms
+div.onkeypress: 492 ms
+div.onkeyup: 465 ms
+div.onload: 460 ms
+div.onmousedown: 463 ms
+div.onmousemove: 468 ms
+div.onmouseout: 454 ms
+div.onmouseover: 455 ms
+div.onmouseup: 473 ms
+div.onmousewheel: 470 ms
+div.onscroll: 473 ms
+div.onselect: 461 ms
+div.onsubmit: 464 ms
+div.onbeforecut: 456 ms
+div.oncut: 459 ms
+div.onbeforecopy: 456 ms
+div.oncopy: 454 ms
+div.onbeforepaste: 464 ms
+div.onpaste: 463 ms
+div.onreset: 466 ms
+div.onsearch: 456 ms
+div.onselectstart: 482 ms
+div.ontouchstart: 408 ms
+div.ontouchmove: 408 ms
+div.ontouchend: 397 ms
+div.ontouchcancel: 399 ms
+div.onwebkitfullscreenchange: 469 ms
+
+==== Attribute setters on Element ====
+div.tagName = undefined: 756 ms
+div.style = undefined: 759 ms
+div.offsetLeft = undefined: 761 ms
+div.offsetTop = undefined: 758 ms
+div.offsetWidth = undefined: 796 ms
+div.offsetHeight = undefined: 757 ms
+div.offsetParent = undefined: 754 ms
+div.clientLeft = undefined: 790 ms
+div.clientTop = undefined: 786 ms
+div.clientWidth = undefined: 810 ms
+div.clientHeight = undefined: 760 ms
+div.scrollLeft = undefined: 994 ms
+div.scrollTop = undefined: 1024 ms
+div.scrollWidth = undefined: 757 ms
+div.scrollHeight = undefined: 755 ms
+div.dataset = undefined: 756 ms
+div.firstElementChild = undefined: 809 ms
+div.lastElementChild = undefined: 771 ms
+div.previousElementSibling = undefined: 755 ms
+div.nextElementSibling = undefined: 767 ms
+div.childElementCount = undefined: 770 ms
+div.innerText = undefined: 1252 ms
+div.onabort = undefined: 987 ms
+div.onblur = undefined: 970 ms
+div.onchange = undefined: 978 ms
+div.onclick = undefined: 992 ms
+div.oncontextmenu = undefined: 991 ms
+div.ondblclick = undefined: 1009 ms
+div.ondrag = undefined: 994 ms
+div.ondragend = undefined: 952 ms
+div.ondragenter = undefined: 931 ms
+div.ondragleave = undefined: 976 ms
+div.ondragover = undefined: 994 ms
+div.ondragstart = undefined: 973 ms
+div.ondrop = undefined: 989 ms
+div.onerror = undefined: 961 ms
+div.onfocus = undefined: 968 ms
+div.oninput = undefined: 999 ms
+div.oninvalid = undefined: 987 ms
+div.onkeydown = undefined: 1036 ms
+div.onkeypress = undefined: 967 ms
+div.onkeyup = undefined: 974 ms
+div.onload = undefined: 971 ms
+div.onmousedown = undefined: 992 ms
+div.onmousemove = undefined: 1019 ms
+div.onmouseout = undefined: 986 ms
+div.onmouseover = undefined: 948 ms
+div.onmouseup = undefined: 966 ms
+div.onmousewheel = undefined: 961 ms
+div.onscroll = undefined: 985 ms
+div.onselect = undefined: 991 ms
+div.onsubmit = undefined: 970 ms
+div.onbeforecut = undefined: 958 ms
+div.oncut = undefined: 999 ms
+div.onbeforecopy = undefined: 952 ms
+div.oncopy = undefined: 944 ms
+div.onbeforepaste = undefined: 963 ms
+div.onpaste = undefined: 984 ms
+div.onreset = undefined: 991 ms
+div.onsearch = undefined: 975 ms
+div.onselectstart = undefined: 979 ms
+div.ontouchstart = undefined: 602 ms
+div.ontouchmove = undefined: 589 ms
+div.ontouchend = undefined: 603 ms
+div.ontouchcancel = undefined: 595 ms
+div.onwebkitfullscreenchange = undefined: 1074 ms
+
+==== Attribute getters on Node ====
+div.nodeName: 464 ms
+div.nodeType: 443 ms
+div.parentNode: 444 ms
+div.childNodes: 1269 ms
+div.firstChild: 446 ms
+div.lastChild: 444 ms
+div.previousSibling: 446 ms
+div.nextSibling: 460 ms
+div.attributes: 1274 ms
+div.ownerDocument: 524 ms
+div.namespaceURI: 451 ms
+div.localName: 446 ms
+div.baseURI: 686 ms
+div.parentElement: 450 ms
+div.isContentEditable: 461 ms
+
+==== Attribute setters on Node ====
+div.nodeName = undefined: 767 ms
+div.nodeType = undefined: 846 ms
+div.parentNode = undefined: 831 ms
+div.childNodes = undefined: 774 ms
+div.firstChild = undefined: 766 ms
+div.lastChild = undefined: 774 ms
+div.previousSibling = undefined: 804 ms
+div.nextSibling = undefined: 802 ms
+div.attributes = undefined: 779 ms
+div.ownerDocument = undefined: 843 ms
+div.namespaceURI = undefined: 799 ms
+div.localName = undefined: 795 ms
+div.baseURI = undefined: 787 ms
+div.parentElement = undefined: 904 ms
+div.isContentEditable = undefined: 747 ms
+
+==== Completed ====
+
+Repeat count: 1000000
+Total time: 148096 ms

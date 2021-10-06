@@ -1,0 +1,294 @@
+<html>
+<head></head>
+<body>
+<h1>DOM Micro Benchmark</h1>
+<p>Repeat count: <input id="repeat" type="text" value="1000000" /><br />
+<input id="AttributeBenchmark" type="checkbox">AttributeBenchmark</input>
+<input id="BusyLoopBenchmark" type="checkbox">BusyLoopBenchmark</input>
+<input id="JSObjectBenchmark" type="checkbox">JSObjectBenchmark</input>
+<!--
+<input id="DivTraversalBenchmark" type="checkbox">DivTraversalBenchmark</input>
+<input id="TestBenchmark" type="checkbox">TestBenchmark</input>
+-->
+<br />
+<input id="run" type="button" value="Run" /></p>
+<pre id="result" style='background-color:#ddffff'></pre>
+<script id="eval"></script>
+</body>
+<script>
+var timerList = {};
+
+function runAllBenchmarks(repeat) {
+    resetTimer(0);
+
+    if (document.getElementById("AttributeBenchmark").checked) {
+        runAttributeBenchmark(repeat);
+    }
+
+    if (document.getElementById("BusyLoopBenchmark").checked) {
+        runBusyLoopBenchmark(repeat);
+    }
+
+    if (document.getElementById("JSObjectBenchmark").checked) {
+        runJSObjectBenchmark(repeat);
+    }
+
+    if (document.getElementById("DivTraversalBenchmark").checked) {
+        runDivTraversalBenchmark(repeat);
+    }
+
+    if (document.getElementById("TestBenchmark").checked) {
+        runTestBenchmark(repeat);
+    }
+
+    logTimer(0, repeat, "total");
+}
+
+function runDivTraversalBenchmark(repeat) {
+    var precode;
+    var repeatNum;
+
+    repeatNum = Math.pow(2, parseInt(Math.log(repeat) / Math.log(2) + 1));
+    for (var divNum = 1; divNum <= 8192; divNum *= 2) {
+        log('\n==== divNum ' + divNum + ' ====\n');
+        precode = 'var outerDiv = document.createElement("div"); for (var i = 0; i < ' + divNum + '; i++) { var innerDiv = document.createElement("div"); outerDiv.appendChild(innerDiv); }'
+        code = 'var currentDiv = outerDiv.firstChild; while (currentDiv) { currentDiv = currentDiv.nextSibling; }'
+        runBenchmark(precode, code, repeatNum);
+        repeatNum /= 2;
+    }
+
+    repeatNum = Math.pow(2, parseInt(Math.log(repeat) / Math.log(2) + 1));
+    for (var divNum = 1; divNum <= 8192; divNum *= 2) {
+        log('\n==== divNum ' + divNum + ' ====\n');
+        precode = 'var outerDiv = document.createElement("div"); for (var i = 0; i < ' + (divNum / 2) + '; i++) { var innerDiv = document.createElement("div"); outerDiv.appendChild(innerDiv); var innerSpan = document.createElement("span"); outerDiv.appendChild(innerSpan); var innerP = document.createElement("p"); outerDiv.appendChild(innerP); var innerBr = document.createElement("br"); outerDiv.appendChild(innerBr); }'
+        code = 'var currentDiv = outerDiv.firstChild; while (currentDiv) { currentDiv = currentDiv.nextSibling; }'
+        runBenchmark(precode, code, repeatNum);
+        repeatNum /= 2;
+    }
+
+    repeatNum = Math.pow(2, parseInt(Math.log(repeat) / Math.log(2) + 1));
+    for (var divNum = 1; divNum <= 8192; divNum *= 2) {
+        log('\n==== divNum ' + divNum + ' ====\n');
+        precode = 'var outerDiv = document.createElement("div"); for (var i = 0; i < ' + divNum + '; i++) { var innerDiv = document.createElement("div"); outerDiv.appendChild(innerDiv); }'
+        code = 'outerDiv.firstChild';
+        runBenchmark(precode, code, repeat);
+        repeatNum /= 2;
+    }
+}
+
+function runTestBenchmark(repeat) {
+    var precode;
+    log('\n==== div.nextSibling ====\n');
+    precode = 'var div = document.createElement("div");';
+    runBenchmark(precode, 'div.nextSibling', repeat);
+}
+
+function runJSObjectBenchmark(repeat) {
+    var precode = '';
+    var levelMax = 50;
+    for (var level = levelMax - 1; level >= 0; level--) {
+        precode += 'var level' + level + ' = new Object();';
+        if (level != levelMax - 1) {
+            precode += 'level' + level + '.__proto__ = level' + (level + 1) + ';';
+        }
+        precode += 'level' + level + '.__defineGetter__("level' + level + 'getter", function() {} );';
+        precode += 'level' + level + '.__defineSetter__("level' + level + 'setter", function() {} );';
+    }
+
+    log('\n==== Call getters on the prototype chain ====\n');
+    for (var level = 0; level <= levelMax - 1; level++) {
+        runBenchmark(precode, 'level0.level' + level + 'getter', repeat);
+    };
+
+    log('\n==== Call setters on the prototype chain ====\n');
+    for (var level = 0; level <= levelMax - 1; level++) {
+        runBenchmark(precode, 'level0.level' + level + 'setter' + ' = undefined', repeat);
+    };
+}
+
+function runBusyLoopBenchmark(repeat) {
+    var testCasePrefixes = ["busyLoop0OnObject", "busyLoop20OnObject", "busyLoop40OnObject", "busyLoop60OnObject", "busyLoop80OnObject", "busyLoop100OnObject", "busyLoop200OnObject", "busyLoop300OnObject", "busyLoop400OnObject", "busyLoop500OnObject", "busyLoop600OnObject", "busyLoop700OnObject", "busyLoop800OnObject", "busyLoop900OnObject", "busyLoop1000OnObject", "busyLoop1200OnObject", "busyLoop1400OnObject", "busyLoop1600OnObject", "busyLoop1800OnObject", "busyLoop2000OnObject", "busyLoop2200OnObject", "busyLoop2400OnObject", "busyLoop2600OnObject", "busyLoop2800OnObject", "busyLoop3000OnObject", "busyLoop0OnObjectWithSecurityCheck", "busyLoop20OnObjectWithSecurityCheck", "busyLoop40OnObjectWithSecurityCheck", "busyLoop60OnObjectWithSecurityCheck", "busyLoop80OnObjectWithSecurityCheck", "busyLoop100OnObjectWithSecurityCheck", "busyLoop200OnObjectWithSecurityCheck", "busyLoop300OnObjectWithSecurityCheck", "busyLoop400OnObjectWithSecurityCheck", "busyLoop500OnObjectWithSecurityCheck", "busyLoop600OnObjectWithSecurityCheck", "busyLoop700OnObjectWithSecurityCheck", "busyLoop800OnObjectWithSecurityCheck", "busyLoop900OnObjectWithSecurityCheck", "busyLoop1000OnObjectWithSecurityCheck", "busyLoop1200OnObjectWithSecurityCheck", "busyLoop1400OnObjectWithSecurityCheck", "busyLoop1600OnObjectWithSecurityCheck", "busyLoop1800OnObjectWithSecurityCheck", "busyLoop2000OnObjectWithSecurityCheck", "busyLoop2200OnObjectWithSecurityCheck", "busyLoop2400OnObjectWithSecurityCheck", "busyLoop2600OnObjectWithSecurityCheck", "busyLoop2800OnObjectWithSecurityCheck", "busyLoop3000OnObjectWithSecurityCheck", "busyLoop0OnProto", "busyLoop20OnProto", "busyLoop40OnProto", "busyLoop60OnProto", "busyLoop80OnProto", "busyLoop100OnProto", "busyLoop200OnProto", "busyLoop300OnProto", "busyLoop400OnProto", "busyLoop500OnProto", "busyLoop600OnProto", "busyLoop700OnProto", "busyLoop800OnProto", "busyLoop900OnProto", "busyLoop1000OnProto", "busyLoop1200OnProto", "busyLoop1400OnProto", "busyLoop1600OnProto", "busyLoop1800OnProto", "busyLoop2000OnProto", "busyLoop2200OnProto", "busyLoop2400OnProto", "busyLoop2600OnProto", "busyLoop2800OnProto", "busyLoop3000OnProto", "busyLoop0OnProtoWithSecurityCheck", "busyLoop20OnProtoWithSecurityCheck", "busyLoop40OnProtoWithSecurityCheck", "busyLoop60OnProtoWithSecurityCheck", "busyLoop80OnProtoWithSecurityCheck", "busyLoop100OnProtoWithSecurityCheck", "busyLoop200OnProtoWithSecurityCheck", "busyLoop300OnProtoWithSecurityCheck", "busyLoop400OnProtoWithSecurityCheck", "busyLoop500OnProtoWithSecurityCheck", "busyLoop600OnProtoWithSecurityCheck", "busyLoop700OnProtoWithSecurityCheck", "busyLoop800OnProtoWithSecurityCheck", "busyLoop900OnProtoWithSecurityCheck", "busyLoop1000OnProtoWithSecurityCheck", "busyLoop1200OnProtoWithSecurityCheck", "busyLoop1400OnProtoWithSecurityCheck", "busyLoop1600OnProtoWithSecurityCheck", "busyLoop1800OnProtoWithSecurityCheck", "busyLoop2000OnProtoWithSecurityCheck", "busyLoop2200OnProtoWithSecurityCheck", "busyLoop2400OnProtoWithSecurityCheck", "busyLoop2600OnProtoWithSecurityCheck", "busyLoop2800OnProtoWithSecurityCheck", "busyLoop3000OnProtoWithSecurityCheck"];
+
+    log('\n==== BusyLoop getters on HTMLDivElement ====\n');
+    resetTimer(1);
+    testCasePrefixes.forEach(function (attr) {
+        runDivBenchmark('div.' + attr + 'HTMLDivElement', repeat);
+    });
+    logTimer(1, repeat);
+
+    log('\n==== BusyLoop setters on HTMLDivElement ====\n');
+    resetTimer(1);
+    testCasePrefixes.forEach(function (attr) {
+        runDivBenchmark('div.' + attr + 'HTMLDivElement = undefined', repeat);
+    });
+    logTimer(1, repeat);
+
+    log('\n==== BusyLoop getters on HTMLElement ====\n');
+    resetTimer(1);
+    testCasePrefixes.forEach(function (attr) {
+        runDivBenchmark('div.' + attr + 'HTMLElement', repeat);
+    });
+    logTimer(1, repeat);
+
+    log('\n==== BusyLoop setters on HTMLElement ====\n');
+    resetTimer(1);
+    testCasePrefixes.forEach(function (attr) {
+        runDivBenchmark('div.' + attr + 'HTMLElement = undefined', repeat);
+    });
+    logTimer(1, repeat);
+
+    resetTimer(1);
+    log('\n==== BusyLoop getters on Element ====\n');
+    testCasePrefixes.forEach(function (attr) {
+        runDivBenchmark('div.' + attr + 'Element', repeat);
+    });
+    logTimer(1, repeat);
+
+    resetTimer(1);
+    log('\n==== BusyLoop setters on Element ====\n');
+    testCasePrefixes.forEach(function (attr) {
+        runDivBenchmark('div.' + attr + 'Element = undefined', repeat);
+    });
+    logTimer(1, repeat);
+
+    resetTimer(1);
+    log('\n==== BusyLoop getters on Node ====\n');
+    testCasePrefixes.forEach(function (attr) {
+        runDivBenchmark('div.' + attr + 'Node', repeat);
+    });
+    logTimer(1, repeat);
+
+    resetTimer(1);
+    log('\n==== BusyLoop setters on Node ====\n');
+    testCasePrefixes.forEach(function (attr) {
+        runDivBenchmark('div.' + attr + 'Node = undefined', repeat);
+    });
+    logTimer(1, repeat);
+}
+
+function runAttributeBenchmark(repeat) {
+    log('\n==== Attribute getters on HTMLDivElement ====\n');
+    resetTimer(1);
+    ["align"].forEach(function (attr) {
+        runDivBenchmark('div.' + attr, repeat);
+    });
+    logTimer(1, repeat);
+
+    log('\n==== Attribute getters on HTMLElement ====\n');
+    resetTimer(1);
+    ["id", "title", "lang", "dir", "className", "classList", "tabIndex", "draggable", "webkitdropzone", "hidden", "accessKey", "children", "isContentEditable", "spellcheck", "innerHTML", "innerText", "outerHTML", "outerText", "contentEditable"].forEach(function (attr) {
+        runDivBenchmark('div.' + attr, repeat);
+    });
+    logTimer(1, repeat);
+
+    log('\n==== Attribute setters on HTMLElement ====\n');
+    resetTimer(1);
+    ["id", "title", "lang", "dir", "className", "tabIndex", "draggable", "webkitdropzone", "hidden", "accessKey", "spellcheck", "innerHTML", "innerText"].forEach(function (attr) {
+        runDivBenchmark('div.' + attr + ' = undefined', repeat);
+    });
+    logTimer(1, repeat);
+
+    resetTimer(1);
+    log('\n==== Attribute getters on Element ====\n');
+    ["tagName", "style", "offsetLeft", "offsetTop", "offsetWidth", "offsetHeight", "offsetParent", "clientLeft", "clientTop", "clientWidth", "clientHeight", "scrollLeft", "scrollTop", "scrollWidth", "scrollHeight", "dataset", "firstElementChild", "lastElementChild", "previousElementSibling", "nextElementSibling", "childElementCount", "onabort", "onblur", "onchange", "onclick", "oncontextmenu", "ondblclick", "ondrag", "ondragend", "ondragenter", "ondragleave", "ondragover", "ondragstart", "ondrop", "onerror", "onfocus", "oninput", "oninvalid", "onkeydown", "onkeypress", "onkeyup", "onload", "onmousedown", "onmousemove", "onmouseout", "onmouseover", "onmouseup", "onmousewheel", "onscroll", "onselect", "onsubmit", "onbeforecut", "oncut", "onbeforecopy", "oncopy", "onbeforepaste", "onpaste", "onreset", "onsearch", "onselectstart", "onwebkitfullscreenchange", "onwebkitfullscreenerror"].forEach(function (attr) {
+        runDivBenchmark('div.' + attr, repeat);
+    });
+    logTimer(1, repeat);
+
+    resetTimer(1);
+    log('\n==== Attribute setters on Element ====\n');
+    ["scrollLeft", "scrollTop", "onabort", "onblur", "onchange", "onclick", "oncontextmenu", "ondblclick", "ondrag", "ondragend", "ondragenter", "ondragleave", "ondragover", "ondragstart", "ondrop", "onerror", "onfocus", "oninput", "oninvalid", "onkeydown", "onkeypress", "onkeyup", "onload", "onmousedown", "onmousemove", "onmouseout", "onmouseover", "onmouseup", "onmousewheel", "onscroll", "onselect", "onsubmit", "onbeforecut", "oncut", "onbeforecopy", "oncopy", "onbeforepaste", "onpaste", "onreset", "onsearch", "onselectstart", "onwebkitfullscreenchange", "onwebkitfullscreenerror"].forEach(function (attr) {
+        runDivBenchmark('div.' + attr + ' = undefined', repeat);
+    });
+    logTimer(1, repeat);
+
+    resetTimer(1);
+    log('\n==== Attribute getters on Node ====\n');
+    ["nodeName", "nodeType", "parentNode", "childNodes", "firstChild", "lastChild", "previousSibling", "nextSibling", "attributes", "ownerDocument", "namespaceURI", "localName", "baseURI", "parentElement", "nodeValue", "prefix", "textContent"].forEach(function (attr) {
+        runDivBenchmark('div.' + attr, repeat);
+    });
+    logTimer(1, repeat);
+
+    resetTimer(1);
+    log('\n==== Attribute setters on Node ====\n');
+    ["nodeValue", "prefix", "textContent"].forEach(function (attr) {
+        runDivBenchmark('div.' + attr + ' = undefined', repeat);
+    });
+    logTimer(1, repeat);
+}
+
+document.getElementById('run').addEventListener('mousedown', function(event) {
+    event.target.value = 'Running...';
+    document.getElementById('result').innerHTML = '';
+});
+
+document.getElementById('run').addEventListener('mouseup', function(event) {
+    event.target.disabled = true;
+    var repeat = document.getElementById('repeat').value;
+
+    runAllBenchmarks(repeat);
+
+    log('\n==== Completed ====\n');
+    benchmarkCompleted();
+});
+
+function log(str) {
+    setTimeout(function () {
+        document.getElementById('result').innerHTML += str;
+    }, 0);
+}
+
+function runDivBenchmark(code, repeat) {
+    runBenchmark('var div = document.createElement("div");', code, repeat);
+}
+
+function runBenchmark(precode, code, repeat) {
+    setTimeout(function() {
+        // Confirm the result for debugging.
+        // var result = eval(precode + code);
+        // document.getElementById('result').innerHTML += code + '(result): ' + result + '\n';
+
+        // warm-up
+        evalScript(precode + ' for (var i = 0; i < ' + 100 + '; i++) { ' + code + ' }');
+
+        var time = evalScript(precode + ' for (var i = 0; i < ' + repeat + '; i++) { ' + code + ' }');
+        document.getElementById('result').innerHTML += code + ': ' + (time / repeat * 1e6).toFixed(2) + ' ns\n';
+    }, 0);
+}
+
+function benchmarkCompleted() {
+    setTimeout(function() {
+        document.getElementById('run').value = 'Run';
+        document.getElementById('run').disabled = false;
+    }, 0);
+}
+
+function resetTimer(index) {
+    setTimeout(function() {
+        index += "";
+        timerList[index] = new Date();
+    }, 0);
+}
+
+function logTimer(index, repeat, message) {
+    if (!repeat)
+        repeat = 1;
+    setTimeout(function() {
+        index += "";
+        document.getElementById('result').innerHTML += 'Time' + (message ? '(' + message + ')' : '') + ': ' + ((new Date() - timerList[index]) / repeat * 1e6).toFixed(2) + ' ns\n';
+    }, 0);
+}
+
+function evalScript(code) {
+    var script = document.createElement("script");
+    script.appendChild(document.createTextNode(code));
+
+    var begin = new Date();
+    document.body.appendChild(script);
+    var end = new Date();
+
+    document.body.removeChild(script);
+    return end - begin;
+}
+</script>
+</html>

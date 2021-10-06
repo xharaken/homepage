@@ -1,0 +1,380 @@
+% 
+% slide.sty @ 2010/2/1
+% 
+
+\usepackage{common}
+%\usepackage{mathpazo} % for english slides
+
+%%% font
+\renewcommand{\sfdefault}{phv}
+\renewcommand{\rmdefault}{cmr}
+%\renewcommand{\rmdefault}{ppl} % for english slides
+\renewcommand{\familydefault}{\rmdefault}
+\renewcommand{\kanjifamilydefault}{\gtdefault}
+
+%%% color
+\def\shallow{\color{shalloworange}}
+\def\middle{\color{middleorange}}
+\def\deep{\color{deeporange}}
+% \def\shallow{\color{shallowblue}}
+% \def\middle{\color{middleblue}}
+% \def\deep{\color{deepblue}}
+
+%%% mark
+\def\pagemark{\ding{"51}}
+\def\titlemark{\ding{"76}}
+\def\submark{\ding{101}}
+\def\icon{\cmr\textmusicalnote}
+\def\colori{\color{deepgreen}}
+\def\colorii{\color{pink}}
+\def\coloriii{\color{deepblue}}
+\def\labelitemi{\ding{"E4}}
+\def\labelitemii{\ding{"D4}}
+\def\labelitemiii{\ding{"A9}}
+\def\labelitemiv{$\bullet$}
+\def\labelenumi{\textbf{({\fontfamily{pcr}\selectfont\theenumi})}}
+\def\labelenumii{\textbf{({\fontfamily{pcr}\selectfont\theenumii})}}
+\def\labelenumiii{\textbf{({\fontfamily{pcr}\selectfont\theenumiii})}}
+\def\labelenumiv{\textbf{({\fontfamily{pcr}\selectfont\theenumiv})}}
+
+%%% decoration
+\def\shadow#1{%
+  \setbox0=\hbox{#1}%
+  \setbox1=\hbox{\kern-0.20em\copy0}%
+  {\color{middlegray}\copy1}{\color{deepgray}\kern-\wd1\kern-0.1em\raise+0.1em\copy1}%
+}
+\def\emred#1{\bfred{#1}}
+
+%%% figure
+\newcommand{\fig}[2]{%
+  \begin{center}%
+    \includegraphics[scale=#1]{#2}%
+  \end{center}%
+}
+\def\up#1{\vspace*{-#1pt}}
+\def\down#1{\vspace*{#1pt}}
+
+%%% anime
+\newcount\animeflag
+\animeflag=\z@
+\def\unsetanime{\animeflag=\@ne}
+\def\animecounter{\number\tmpcount}
+\def\animenumberleft{(}
+\def\animenumberright{)}
+\def\animenumber{\ifnum\animeflag=\z@\animenumberleft\animecounter\animenumberright\fi}
+\newcommand{\anime}[3]{
+  \makeatletter
+  \newcount\tmpcount
+  \newcount\tmptotal
+  \newcount\tmpflag
+  \tmpcount=#1
+  \tmptotal=#2
+  \tmpflag=\z@
+  \advance\tmptotal\@ne
+  \ifnum\animeflag=\@ne
+  \tmpcount=\tmptotal\advance\tmpcount-1
+  \fi
+  \@whilenum\tmpcount<\tmptotal\do{
+    #3
+    %\ifnum\tmpflag=\@ne\addtocounter{page}{-1}\else\tmpflag=\@ne\fi
+    \advance\tmpcount\@ne
+  }
+  \makeatother
+}
+
+%%% page style
+\pagestyle{empty}
+\setlength{\topmargin}{-1.0truecm}
+\setlength{\parindent}{0pt}
+\setlength{\voffset}{-2.5truecm}
+\setlength{\headsep}{0truecm}
+\setlength{\textheight}{\paperheight}
+\setlength{\oddsidemargin}{-1.0truecm}
+\setlength{\evensidemargin}{\oddsidemargin}
+\setlength{\textwidth}{\paperwidth}
+\addtolength{\textwidth}{-2truecm}
+\def\bls{12pt}
+
+\def\sectionmark#1{\markboth{#1}{#1}}
+
+\def\subtitle#1{\def\@subtitle{#1}}
+\subtitle{\@title}
+\pagestyle{empty}
+\def\@evenhead{%
+  \begin{picture}(0,0)%
+    \hskip-50pt\raisebox{-20pt}{\shallow{\put(0,0){\rule{600pt}{100pt}}}}%
+  \end{picture}%
+  {\hskip28pt\pag\ifnum\c@section=0\@subtitle\else%
+    % \arabic{section}.\hskip8pt%
+    \leftmark\fi}\hfil%
+  {\deep\pagemark}\,{\pag\arabic{page}\,\,\,}\par%
+  \begin{picture}(0,0)%
+    \hskip-294pt\raisebox{-2.5pt}{\deep{\put(0,0){\rule{600pt}{0.5pt}}}}%
+  \end{picture}%
+}
+\let\@oddhead\@evenhead
+
+%%% title
+\renewcommand{\maketitle}{%
+  \begin{picture}(0,0)%
+    \hskip-50pt\raisebox{-20pt}{\shallow{\put(0,0){\rule{600pt}{100pt}}}}%
+    \raisebox{10pt}{\middle{\put(0,0){\rule{600pt}{100pt}}}}%
+    \raisebox{8pt}{\middle{\put(0,0){\rule{600pt}{1pt}}}}%
+    \raisebox{6pt}{\middle{\put(0,0){\rule{600pt}{1pt}}}}%
+    \raisebox{4pt}{\middle{\put(0,0){\rule{600pt}{1pt}}}}%
+  \end{picture}%
+  \begin{picture}(0,0)%
+    \hskip-50pt\raisebox{-281pt}{\shallow{\put(0,0){\rule{600pt}{100pt}}}}%
+    \raisebox{-311pt}{\middle{\put(0,0){\rule{600pt}{100pt}}}}%
+    \raisebox{-206pt}{\middle{\put(0,0){\rule{600pt}{1pt}}}}%
+    \raisebox{-208pt}{\middle{\put(0,0){\rule{600pt}{1pt}}}}%
+    \raisebox{-210pt}{\middle{\put(0,0){\rule{600pt}{1pt}}}}%
+  \end{picture}%
+  \begin{picture}(0,0)%
+    \hskip218pt\raisebox{-212pt}{\rotatebox{35}{\middle{\HUGE\submark}}}%
+    \hskip-8pt\raisebox{-207pt}{\rotatebox{0}{\middle{\HUGE\submark}}}%
+    \hskip-12pt\raisebox{-202pt}{\rotatebox{30}{\middle{\HUGE\submark}}}%
+    \hskip-18pt\raisebox{-187pt}{\rotatebox{55}{\middle{\HUGE\submark}}}%
+    \hskip-20pt\raisebox{-209pt}{\rotatebox{45}{\middle{\HUGE\submark}}}%
+    \hskip-12pt\raisebox{-197pt}{\rotatebox{0}{\middle{\HUGE\submark}}}%
+    \hskip-22pt\raisebox{-182pt}{\rotatebox{35}{\middle{\HUGE\submark}}}%
+    \hskip-18pt\raisebox{-212pt}{\rotatebox{50}{\middle{\HUGE\submark}}}%
+  \end{picture}\par%
+  \begin{picture}(0,0)%
+    \hskip-17pt\raisebox{-5pt}{\rotatebox{20}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{-30pt}{\rotatebox{55}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{-5pt}{\rotatebox{0}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{-20pt}{\rotatebox{35}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{0pt}{\rotatebox{15}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{-15pt}{\rotatebox{40}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{0pt}{\rotatebox{50}{\middle{\HUGE\submark}}}%
+    \hskip-12pt\raisebox{0pt}{\rotatebox{10}{\middle{\HUGE\submark}}}%
+  \end{picture}%
+  \thispagestyle{empty}%
+  \vskip45pt%
+  \begin{center}%
+    {\LARGE{\color{deepgreen}\titlemark}\,\,%
+      \textbf{\@title}\,\,{\color{deepgreen}\titlemark}}\par%
+    \vskip10pt%
+    {\Large\@author}\par%
+    \vskip10pt%
+    {\Large\@date}\par%
+  \end{center}%
+}
+
+%%% thank you
+\newcommand{\thankyou}{%
+  \clearpage
+  \begin{picture}(0,0)%
+    \hskip-50pt\raisebox{-20pt}{\shallow{\put(0,0){\rule{600pt}{100pt}}}}%
+    \raisebox{10pt}{\middle{\put(0,0){\rule{600pt}{100pt}}}}%
+    \raisebox{8pt}{\middle{\put(0,0){\rule{600pt}{1pt}}}}%
+    \raisebox{6pt}{\middle{\put(0,0){\rule{600pt}{1pt}}}}%
+    \raisebox{4pt}{\middle{\put(0,0){\rule{600pt}{1pt}}}}%
+  \end{picture}%
+  \begin{picture}(0,0)%
+    \hskip-50pt\raisebox{-281pt}{\shallow{\put(0,0){\rule{600pt}{100pt}}}}%
+    \raisebox{-311pt}{\middle{\put(0,0){\rule{600pt}{100pt}}}}%
+    \raisebox{-206pt}{\middle{\put(0,0){\rule{600pt}{1pt}}}}%
+    \raisebox{-208pt}{\middle{\put(0,0){\rule{600pt}{1pt}}}}%
+    \raisebox{-210pt}{\middle{\put(0,0){\rule{600pt}{1pt}}}}%
+  \end{picture}%
+  \begin{picture}(0,0)%
+    \hskip218pt\raisebox{-212pt}{\rotatebox{35}{\middle{\HUGE\submark}}}%
+    \hskip-8pt\raisebox{-207pt}{\rotatebox{0}{\middle{\HUGE\submark}}}%
+    \hskip-12pt\raisebox{-202pt}{\rotatebox{30}{\middle{\HUGE\submark}}}%
+    \hskip-18pt\raisebox{-187pt}{\rotatebox{55}{\middle{\HUGE\submark}}}%
+    \hskip-20pt\raisebox{-209pt}{\rotatebox{45}{\middle{\HUGE\submark}}}%
+    \hskip-12pt\raisebox{-197pt}{\rotatebox{0}{\middle{\HUGE\submark}}}%
+    \hskip-22pt\raisebox{-182pt}{\rotatebox{35}{\middle{\HUGE\submark}}}%
+    \hskip-18pt\raisebox{-212pt}{\rotatebox{50}{\middle{\HUGE\submark}}}%
+  \end{picture}\par%
+  \begin{picture}(0,0)%
+    \hskip-17pt\raisebox{-5pt}{\rotatebox{20}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{-30pt}{\rotatebox{55}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{-5pt}{\rotatebox{0}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{-20pt}{\rotatebox{35}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{0pt}{\rotatebox{15}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{-15pt}{\rotatebox{40}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{0pt}{\rotatebox{50}{\middle{\HUGE\submark}}}%
+    \hskip-12pt\raisebox{0pt}{\rotatebox{10}{\middle{\HUGE\submark}}}%
+  \end{picture}%
+  \thispagestyle{empty}%
+  \vskip140pt%
+  \begin{center}%
+    \hskip80pt\huge{\pag\color{deepgray}\textbf{\textit{Thank you!}}}
+  \end{center}%
+  \vskip-140pt%
+}
+
+
+% %%% environment
+
+\def\itemindentlist{0zw}
+\def\parseplist{0.2em}
+\def\leftmarginlist{1zw}
+\def\rightmarginlist{0zw}
+\def\itemseplist{0zw}
+\def\listparindentlist{0zw}
+
+\renewenvironment{itemize}
+{\ifnum \@itemdepth >\thr@@\@toodeep\else%
+  \advance\@itemdepth\@ne%
+  \advance\@listdepth by 1%
+  \edef\depthcolor{color\romannumeral\the\@listdepth}%
+  \edef\@itemitem{labelitem\romannumeral\the\@listdepth}%
+  \advance\@listdepth by -1%
+  \expandafter%
+  \list{\csname\depthcolor\endcsname\csname\@itemitem\endcsname}{%
+    \iftdir%
+    \ifnum \@listdepth=\@ne \topsep.5\normalbaselineskip%
+    \else\topsep\z@\fi%
+    \parskip\z@ \itemsep\z@ \parsep\z@%
+    \ifnum\@itemdepth =\@ne \leftmargin1zw\relax%
+    \else\leftmargin\leftskip\fi%
+    \advance\leftmargin 1zw%
+    \fi%
+    \setlength{\itemindent}{-\itemindentlist}%
+    \setlength{\leftmargin}{\leftmarginlist}%
+    \setlength{\rightmargin}{\rightmarginlist}%
+    \setlength{\labelsep}{0.3zw}%
+    \setlength{\labelwidth}{3zw}%
+    \setlength{\itemsep}{\itemseplist}%
+    \setlength{\parsep}{\parseplist}%
+    \setlength{\listparindent}{\listparindentlist}%
+    \def\makelabel##1{\hss \llap{##1}}}%
+  \fi}{\endlist}
+
+\renewcommand{\theenumi}{\@arabic\c@enumi}
+\renewcommand{\theenumii}{\@alph\c@enumii}
+\renewcommand{\theenumiii}{\@Alph\c@enumiii}
+\renewcommand{\theenumiv}{\@roman\c@enumiv}
+\renewenvironment{enumerate}
+{\ifnum \@enumdepth >\thr@@\@toodeep\else%
+  \advance\@enumdepth\@ne%
+  \advance\@listdepth by 1%
+  \edef\depthcolor{color\romannumeral\the\@listdepth}%
+  \edef\@enumctr{enum\romannumeral\the\@enumdepth}%
+  \advance\@listdepth by -1%
+  \list{\csname\depthcolor\endcsname\csname label\@enumctr\endcsname}{%
+    \iftdir%
+    \ifnum \@listdepth=\@ne \topsep.5\normalbaselineskip%
+    \else\topsep\z@\fi%
+    \parskip\z@ \itemsep\z@ \parsep\z@%
+    \ifnum \@enumdepth=\@ne \leftmargin1zw\relax%
+    \else\leftmargin\leftskip\fi%
+    \advance\leftmargin 1zw%
+    \fi%
+    \usecounter{\@enumctr}%
+    \setlength{\itemindent}{-\itemindentlist}%
+    \addtolength{\itemindent}{0.5zw}%
+    \setlength{\leftmargin}{\leftmarginlist}%
+    \setlength{\rightmargin}{\rightmarginlist}%
+    \setlength{\labelsep}{0.3zw}%
+    \setlength{\labelwidth}{3zw}%
+    \setlength{\itemsep}{\itemseplist}%
+    \setlength{\parsep}{\parseplist}%
+    \setlength{\listparindent}{\listparindentlist}%
+    \def\makelabel##1{\hss\llap{##1}}}%
+  \fi}{\endlist}
+
+\renewenvironment{description}
+{\advance\@listdepth by 1%
+  \edef\depthcolor{color\romannumeral\the\@listdepth}%
+  \advance\@listdepth by -1%
+  \list{}{%
+    \iftdir%
+    \leftmargin\leftskip \advance\leftmargin3\Cwd%
+    \rightmargin\rightskip%
+    \labelsep=1zw \itemsep\z@%
+    \listparindent\z@ \topskip\z@ \parskip\z@ \partopsep\z@%
+    \fi%
+    \setlength{\itemindent}{-\itemindentlist}%
+    \addtolength{\itemindent}{2.0zw}%
+    \setlength{\leftmargin}{\leftmarginlist}%
+    \setlength{\rightmargin}{\rightmarginlist}%
+    \setlength{\labelsep}{0.3zw}%
+    \setlength{\labelwidth}{3zw}%
+    \setlength{\itemsep}{\itemseplist}%
+    \setlength{\parsep}{\parseplist}%
+    \setlength{\listparindent}{\listparindentlist}%
+    \def\makelabel{\csname\depthcolor\endcsname\descriptionlabel}}
+}{\endlist}
+\renewcommand{\descriptionlabel}[1]{\bfseries #1 : }
+
+\newenvironment{mini}[1]
+{\begin{minipage}{#1}\setlength{\baselineskip}{\bls}}{\end{minipage}}
+
+%%% section
+\renewcommand{\thesection}{}
+%{\pag\arabic{section}.}
+
+\renewcommand{\section}[1]{%
+  \clearpage
+  \ifnum\c@page=2\vspace*{-20pt}\fi%
+  \pagecolor{white}%
+  \thispagestyle{empty}%
+  \begin{picture}(0,0)%
+    \hskip218pt\raisebox{-224pt}{\rotatebox{35}{\middle{\HUGE\submark}}}%
+    \hskip-8pt\raisebox{-219pt}{\rotatebox{0}{\middle{\HUGE\submark}}}%
+    \hskip-12pt\raisebox{-214pt}{\rotatebox{30}{\middle{\HUGE\submark}}}%
+    \hskip-18pt\raisebox{-199pt}{\rotatebox{55}{\middle{\HUGE\submark}}}%
+    \hskip-20pt\raisebox{-221pt}{\rotatebox{45}{\middle{\HUGE\submark}}}%
+    \hskip-12pt\raisebox{-209pt}{\rotatebox{0}{\middle{\HUGE\submark}}}%
+    \hskip-22pt\raisebox{-194pt}{\rotatebox{35}{\middle{\HUGE\submark}}}%
+    \hskip-18pt\raisebox{-224pt}{\rotatebox{50}{\middle{\HUGE\submark}}}%
+  \end{picture}\par%
+  \begin{picture}(0,0)%
+    \hskip-17pt\raisebox{-5pt}{\rotatebox{20}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{-30pt}{\rotatebox{55}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{-5pt}{\rotatebox{0}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{-20pt}{\rotatebox{35}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{0pt}{\rotatebox{15}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{-15pt}{\rotatebox{40}{\middle{\HUGE\submark}}}%
+    \hskip-15pt\raisebox{0pt}{\rotatebox{50}{\middle{\HUGE\submark}}}%
+    \hskip-12pt\raisebox{0pt}{\rotatebox{10}{\middle{\HUGE\submark}}}%
+  \end{picture}%
+  \begin{picture}(0,0)%
+    \hskip-15pt\raisebox{-90pt}{\shallow\put(-15,0){\rule{600pt}{25pt}}}%
+    \hskip-23pt\raisebox{-400pt}{\shallow\put(0,0){\rule{30pt}{600pt}}}%
+    \hskip-4pt\raisebox{-400pt}{\middle\put(0,0){\rule{30pt}{600pt}}}%
+    \hskip31pt\raisebox{-400pt}{\middle\put(0,0){\rule{0.5pt}{600pt}}}%
+    \hskip1.5pt\raisebox{-400pt}{\middle\put(0,0){\rule{0.5pt}{600pt}}}%
+    \hskip-15pt\raisebox{-90pt}{\middle\put(-15,0){\rule{600pt}{3pt}}}%
+    \hskip-15pt\raisebox{-90pt}{\deep\put(-15,0){\rule{600pt}{1.5pt}}}%
+    \hskip-15pt\raisebox{-86pt}{\middle\put(-15,0){\rule{600pt}{0.5pt}}}%
+    \hskip-15pt\raisebox{-84.5pt}{\middle\put(-15,0){\rule{600pt}{0.5pt}}}%
+  \end{picture}%
+  \vskip56pt%
+  \setlength{\baselineskip}{\bls}%
+  \@startsection{section}{1}{\z@}{0pt}{0pt}%
+  {\reset@font%
+    \hskip-4pt\raisebox{-0.8pt}{\LARGE\color{deepgreen}\titlemark}%
+    \hskip4pt\LARGE%
+  }{\hskip-5pt\phv#1}%
+  \vskip15pt%
+}
+
+\renewcommand{\subsection}[1]{%
+  \clearpage
+  \pagecolor{white}%
+  \begin{picture}(0,0)%
+    \hskip-38pt\raisebox{-400pt}{\shallow\put(0,0){\rule{30pt}{600pt}}}%
+    \hskip-6pt\raisebox{-400pt}{\middle\put(0,0){\rule{30pt}{600pt}}}%
+    \hskip31pt\raisebox{-400pt}{\middle\put(0,0){\rule{0.5pt}{600pt}}}%
+    \hskip1.5pt\raisebox{-400pt}{\middle\put(0,0){\rule{0.5pt}{600pt}}}%
+  \end{picture}%
+  \begin{picture}(0,0)%
+    \hskip-50pt\raisebox{-10pt}{\middle{\put(0,0){\rule{600pt}{2pt}}}}%
+    \hskip-50pt\raisebox{-10pt}{\deep{\put(0,0){\rule{600pt}{1pt}}}}%
+  \end{picture}%
+  \vskip-16pt\par%
+  \hskip2pt\raisebox{-0.8pt}{\Huge\color{middleorange}\icon}%
+  \hskip-18pt\raisebox{0.8pt}{\Huge\color{deeporange}\icon}%
+  \vskip-28pt%
+  \setlength{\baselineskip}{\bls}%
+  \vskip12pt%
+  \@startsection{subsection}{10}{\z@}{0pt}{0pt}%
+  {\reset@font\large\hskip27pt}{\phv#1}%
+  \vskip7pt%
+}

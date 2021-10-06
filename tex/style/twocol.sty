@@ -1,0 +1,214 @@
+% 
+% twocol.sty @ 2009/11/22
+% 
+
+%%% usepackage
+\usepackage{common}
+
+%%% setlength
+\setlength{\oddsidemargin}{-1.5truecm}
+\setlength{\textwidth}{18.9truecm}
+\setlength{\headsep}{0truecm}
+\setlength{\topmargin}{-2truecm}
+\setlength{\textheight}{26.4truecm}
+\setlength{\parskip}{0pt}
+
+\def\titletop#1{\def\@titletop{#1}}
+\def\titlemiddle#1{\def\@titlemiddle{#1}}
+\def\titlebottom#1{\def\@titlebottom{#1}}
+\titletop{}
+\titlemiddle{}
+\titlebottom{}
+
+%%% naming
+\renewcommand{\figurename}{Fig.}
+\renewcommand{\tablename}{Tab.}
+\renewcommand{\bibname}{参考文献}
+\renewcommand{\refname}{参考文献}
+\renewcommand{\@cite}[1]{\textsuperscript{#1)}} 
+\renewcommand{\@biblabel}[1]{#1)\,\,} 
+
+%%% title
+\renewcommand{\maketitle}{%
+  \twocolumn[
+  \begin{center}%
+    \begin{screen}%
+      \centering%
+      \textbf{\@titletop}\\%
+      \vspace*{6pt}%
+      \centering%
+      {\Large\textbf{\@titlemiddle}}\\%
+      \vspace*{6pt}%
+      \centering%
+      \textbf{\@titlebottom}%
+    \end{screen}%
+  \end{center}%
+  \vskip12pt
+  ]
+}
+
+%%% list
+\def\itemindentlist{0zw}
+\def\parseplist{0em}
+\def\leftmarginlist{1zw}
+\def\rightmarginlist{0zw}
+\def\itemseplist{0zw}
+\def\listparindentlist{0zw}
+\def\up{\vspace*{-\parseplist}}
+
+\renewenvironment{itemize}
+{\vspace*{-0.5\normalbaselineskip}%
+  \ifnum \@itemdepth >\thr@@\@toodeep\else%
+  \advance\@itemdepth\@ne%
+  \edef\@itemitem{labelitem\romannumeral\the\@itemdepth}%
+  \expandafter%
+  \list{\csname\@itemitem\endcsname}{%
+    \iftdir%
+    \ifnum \@listdepth=\@ne \topsep.0\normalbaselineskip%
+    \else\topsep\z@\fi%
+    \parskip\z@ \itemsep\z@ \parsep\z@%
+    \ifnum\@itemdepth =\@ne \leftmargin1zw\relax%
+    \else\leftmargin\leftskip\fi%
+    \advance\leftmargin 1zw%
+    \fi%
+    \setlength{\itemindent}{-\itemindentlist}%
+    \setlength{\leftmargin}{\leftmarginlist}%
+    \setlength{\rightmargin}{\rightmarginlist}%
+    \setlength{\labelsep}{0.3zw}%
+    \setlength{\labelwidth}{3zw}%
+    \setlength{\itemsep}{\itemseplist}%
+    \setlength{\parsep}{\parseplist}%
+    \setlength{\listparindent}{\listparindentlist}%
+    \def\makelabel##1{\hss \llap{##1}}}%
+  \fi}{\endlist\vspace*{-0.5\normalbaselineskip}}
+
+\def\labelenumi{(\theenumi)}
+\def\labelenumii{(\theenumii)}
+\def\labelenumiii{(\theenumiii)}
+\renewcommand{\theenumi}{\@arabic\c@enumi}
+\renewcommand{\theenumii}{\@alph\c@enumii}
+\renewcommand{\theenumiii}{\@Alph\c@enumiii}
+\renewcommand{\theenumiv}{\@roman\c@enumiv}
+\renewenvironment{enumerate}
+{\vspace*{-0.5\normalbaselineskip}%
+  \ifnum \@enumdepth >\thr@@\@toodeep\else%
+  \advance\@enumdepth\@ne%
+  \edef\@enumctr{enum\romannumeral\the\@enumdepth}%
+  \list{\csname label\@enumctr\endcsname}{%
+    \iftdir%
+    \ifnum \@listdepth=\@ne \topsep.0\normalbaselineskip%
+    \else\topsep\z@\fi%
+    \parskip\z@ \itemsep\z@ \parsep\z@%
+    \ifnum \@enumdepth=\@ne \leftmargin1zw\relax%
+    \else\leftmargin\leftskip\fi%
+    \advance\leftmargin 1zw%
+    \fi%
+    \usecounter{\@enumctr}%
+    \setlength{\itemindent}{-\itemindentlist}%
+    \addtolength{\itemindent}{1zw}%
+    \setlength{\leftmargin}{\leftmarginlist}%
+    \setlength{\rightmargin}{\rightmarginlist}%
+    \setlength{\labelsep}{0.5zw}%
+    \setlength{\labelwidth}{5zw}%
+    \setlength{\itemsep}{\itemseplist}%
+    \setlength{\parsep}{\parseplist}%
+    \setlength{\listparindent}{\listparindentlist}%
+    \def\makelabel##1{\hss\llap{##1}}}%
+  \fi}{\endlist\vspace*{-0.5\normalbaselineskip}}
+
+\renewenvironment{description}
+{\vspace*{-0.5\normalbaselineskip}%
+  \list{}{%
+    \iftdir%
+    \leftmargin\leftskip \advance\leftmargin3\Cwd%
+    \rightmargin\rightskip%
+    \labelsep=1zw \itemsep\z@%
+    \listparindent\z@ \topskip\z@ \parskip\z@ \partopsep\z@%
+    \fi%
+    \setlength{\itemindent}{-\itemindentlist}%
+    \addtolength{\itemindent}{2.0zw}%
+    \setlength{\leftmargin}{\leftmarginlist}%
+    \setlength{\rightmargin}{\rightmarginlist}%
+    \setlength{\labelsep}{0zw}%
+    \setlength{\labelwidth}{3zw}%
+    \setlength{\itemsep}{\itemseplist}%
+    \setlength{\parsep}{\parseplist}%
+    \setlength{\listparindent}{\listparindentlist}%
+    \def\makelabel{\descriptionlabel}}
+}{\endlist\vspace*{-0.5\normalbaselineskip}}
+\renewcommand{\descriptionlabel}[1]{\bfseries #1\hskip1zw}
+
+\renewenvironment{thebibliography}[1]
+{\global\let\presectionname\relax
+  \global\let\postsectionname\relax
+  \section*{\refname}\@mkboth{\refname}{\refname}%
+  \list{\@biblabel{\@arabic\c@enumiv}}%
+  {\settowidth\labelwidth{\@biblabel{#1}}%
+    \leftmargin\labelwidth
+    \advance\leftmargin\labelsep
+    \@openbib@code
+    \usecounter{enumiv}%
+    \let\p@enumiv\@empty
+    \setlength{\itemindent}{-\itemindentlist}%
+    \addtolength{\itemindent}{0zw}%
+    \setlength{\leftmargin}{\leftmarginlist}%
+    \setlength{\rightmargin}{\rightmarginlist}%
+    \setlength{\labelsep}{0zw}%
+    \setlength{\labelwidth}{3zw}%
+    \setlength{\itemsep}{\itemseplist}%
+    \setlength{\parsep}{\parseplist}%
+    \setlength{\listparindent}{\listparindentlist}%
+  }%
+  \sloppy
+  \clubpenalty4000
+  \@clubpenalty\clubpenalty
+  \widowpenalty4000%
+  \sfcode`\.\@m}
+{\def\@noitemerr
+  {\@latex@warning{Empty `thebibliography' environment}}%
+  \endlist\vspace*{-0.5\normalbaselineskip}}
+
+
+%%% section
+\renewcommand{\thesection}{{\cmr\arabic{section}}}
+\renewcommand{\thesubsection}{{\cmr\arabic{section}.\arabic{subsection}}}
+\renewcommand{\thesubsubsection}{{\cmr\arabic{section}.\arabic{subsection}.\arabic{subsubsection}}}
+\renewcommand{\thefootnote}{\kern1pt$\star$\kern1pt{\pag\arabic{footnote}}\;\;}
+
+\renewcommand{\section}{\@ifstar{\@ssection}{\@section}}
+\newcommand{\@section}[1]{%
+  \vskip0.5\normalbaselineskip%
+  \@startsection{section}{1}{\z@}{0pt}{0pt}%
+  {\reset@font\large\bfseries\hskip1zw}{#1}\par%
+  \vskip0.5\normalbaselineskip%
+}
+
+\newcommand{\@ssection}[1]{%
+  \vskip0.5\normalbaselineskip%
+  \@startsection{section}{10}{\z@}{0pt}{0pt}%
+  {\reset@font\large\bfseries\hskip1zw}{#1}\par%
+  \vskip0.5\normalbaselineskip%
+}
+
+\renewcommand{\subsection}{\@ifstar{\@ssubsection}{\@subsection}}
+\newcommand{\@subsection}[1]{%
+  \@startsection{subsection}{2}{\z@}{0pt}{0pt}%
+  {\reset@font\bfseries\hskip1zw}{#1}\par%
+}
+
+\newcommand{\@ssubsection}[1]{%
+  \@startsection{subsection}{12}{\z@}{0pt}{0pt}%
+  {\reset@font\bfseries\hskip1zw}{#1}\par%
+}
+
+\renewcommand{\subsubsection}{\@ifstar{\@ssubsubsection}{\@subsubsection}}
+\newcommand{\@subsubsection}[1]{%
+  \@startsection{subsubsection}{3}{\z@}{0pt}{0pt}%
+  {\reset@font\bfseries\hskip1zw}{#1}\par%
+}
+
+\newcommand{\@ssubsubsection}[1]{%
+  \@startsection{subsubsection}{13}{\z@}{0pt}{0pt}%
+  {\reset@font\bfseries\hskip1zw}{#1}\par%
+}
+

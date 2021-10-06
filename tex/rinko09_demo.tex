@@ -1,0 +1,679 @@
+\documentclass[10pt]{jsarticle}
+\usepackage{/home/haraken/tex/style/twocol}
+
+\begin{document}
+
+\titletop{輪講資料\hfill 2009年11月27日}
+\titlemiddle{クラウドコンピューティングに対するスレッドマイグレーション技術の適用\\
+  Application of Thread Migration Techniques to Cloud Computing}
+\titlebottom{情報理工学系研究科 電子情報学専攻 近山・田浦研究室 修士1年 48096419 原健太朗}
+
+\maketitle
+
+\section*{Abstract}
+
+With the increase of parallel and distributed applications 
+which require many computational resources, the importance of Cloud Computing is rising, 
+in which a user can use only as many computational resources as needed when needed 
+in a pay-as-you-go system. 
+Although Cloud Computing services have been featured in many ways, 
+they must at least meet the following two common requirements; 
+firstly they must support flexible scale-up/scale-down in response to dynamic load fluctuation; 
+secondly they must schedule shared computational resources between multiple users 
+(according to their policies). 
+In this paper, I analyze two representative Cloud Computing services, 
+Amazon EC2 and Google App Engine, focusing on how each service achieves these two requirements. 
+On the basis of these analyses I propose a thread migration-based model 
+as an intermediate approach between Amazon EC2 and Google App Engine. 
+Moreover, as elemental techniques for achieving the thread migration-based model efficiently, 
+I survey techniques for kernel thread migration and fast memory migration. 
+
+\section{序論}
+\label{sec:intro}
+
+\subsection{背景}
+
+近年，SNSやオンラインゲームなどのWebアプリケーションや，
+遺伝子解析や地震シミュレーションなどの高性能数値計算アプリケーションなどを始めとして，
+多数の計算資源を要求する並列分散アプリケーションが増加している．
+従来，企業や大学などの組織がこのようなアプリケーションを実行しようと思えば，
+その組織が自前でデータセンタを構築する必要があった．
+すなわち，従来のコンピューティング形態では，
+各組織が，サーバやネットワーク機器などのインフラストラクチャや
+OSなどのプラットフォーム，そしてその上で動作する各種ソフトウェアなどを備えたデータセンタを構築し，
+それらを日常的に管理する必要があった．
+
+しかし，このようなデータセンタ``所有型''のコンピューティング形態にはいくつかの欠点がある．
+第一の欠点として，データセンタの管理コストが大きい．
+各組織の目的は，あくまでもアプリケーションを実行することであるため，
+複雑で専門的な管理技術を要するデータセンタの管理は回避したい作業である．
+第二の欠点として，データセンタを構築する段階では適切なサーバ台数を見積もることが難しい．
+当然，データセンタを構築する上では設置するサーバ台数を決定しなければならないが，
+過小に見積もれば高負荷に耐えられないし，過大に見積もれば投資が無駄になってしまう．
+また，負荷を監視しつつサーバ台数を増強するとしても，
+サーバの発注・設置・ソフトウェア設定など多くの作業が必要になるため，
+負荷が高くなったからと言ってすぐに増強できるものではない．
+第三の欠点として，固定のサーバ台数で運用されるデータセンタでは動的な負荷変動に効率的に対応できない．
+データセンタのサーバ利用率は，平均で5\%〜20\%であり，
+ピーク時にはその2倍〜10倍の負荷が加わると言われている\cite{t10}．
+つまり，固定のサーバ台数で運用されるデータセンタでは，
+普段は処理能力が余剰になっている一方で高負荷時には処理能力が不足する事態が起きやすく，
+動的な負荷変動を効率的に吸収することができない．
+
+\subsection{クラウドコンピューティングとは}
+
+以上のような現状を背景として，近年注目を浴びてきているコンピューティング形態がクラウドコンピューティング\cite{t10,t11,t12}である．
+クラウドコンピューティングでは，クラウドプロバイダと呼ばれる組織が大規模なデータセンタを構築し，
+インフラストラクチャ，プラットフォーム，ソフトウェアなどを整備して，それらをサービスとして利用者に提供する．
+そして利用者は，それらのサービスを必要なときに必要な量だけ利用することができ，実際に利用した量だけ課金される．
+つまり，従来のコンピューティング形態が``所有型''なのに対して，
+クラウドコンピューティングは``利用型''のコンピューティング形態である．
+
+クラウドコンピューティングが提供するサービスは，
+IaaS（Inflastructure as a Service），PaaS（Platform as a Service），
+SaaS（Software as a Service）の3つに大きく分類できる．
+IaaSは，仮想サーバやストレージなどの計算機資源を提供するサービスであり，
+後述するAmazon EC2やAmazon S3\cite{t20}などが代表例である．
+PaaSは，利用者が作成したアプリケーションの実行環境を提供するサービスであり，
+後述するGoogle App Engine\cite{t21}，Windows Azure\cite{t22}，Salesforce.com\cite{t23}などが代表例である．
+PaaSでは，各サービスごとに実行可能なアプリケーション領域がある程度限定されている．
+SaaSは，クラウド環境上で実現されるソフトウェアサービスであり，利用者がブラウザ経由で利用するWebサービスが中心である．
+たとえば，Google Docs\cite{t24}やSalesforce.comのCRMなどが代表例である．
+これら``利用型''のクラウドコンピューティングサービスでは，
+利用者はサービスが内部的にどう実現されているかを意識する必要がないため，煩雑なサーバ管理技術などは不要である．
+また，従量制課金モデルの中で必要なときに必要な量だけ利用できるため，動的な負荷変動に効率的に対応できる．
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\hsize]{ex.eps}
+  \caption{An example of computational scale-up/scale-down in Cloud Computing.}
+  \label{fig:ex}
+\end{figure}
+
+具体例を示す．
+あるクラウド環境の中に利用者Aと利用者Bがいるとし，今利用者Aの負荷が増大したとする（\figref{fig:ex}(A)）．
+すると，利用者Aのアプリケーションの計算規模が拡張し負荷が分散される（\figref{fig:ex}(B)）．
+やがて，利用者Bの負荷が利用者Aの負荷より増大したとすると（\figref{fig:ex}(C)），
+今度は利用者Aのアプリケーションが縮小する代わりに利用者Bのアプリケーションが
+拡張して負荷分散が図られる（\figref{fig:ex}(D)），というような変化がたとえば起きる．
+当然，どういう条件が成立したときにどの利用者の計算規模を拡張/縮小させるかは各サービスに依存するが，
+いずれにせよ，資源を利用者間で適宜スケジューリングしつつ，
+負荷に応じて計算規模を拡張/縮小することで負荷分散を図るというのがクラウドコンピューティングにおける基本的な仕組みである．
+ここで重要なのは，多数の利用者で多数の資源を共有することにより各利用者の負荷変動が上手に吸収されるという点である．
+たとえば，月曜日に負荷が高い利用者と火曜日に負荷が高い利用者と水曜日に負荷が高い利用者と木曜日に負荷が高い利用者を
+1個のクラウド環境に詰め込むことにより，各利用者が自前でデータセンタを所有する場合と比較して，
+資源の利用率を高く維持しつつ，全体として少ない資源数で負荷変動を吸収できる．
+要するに，10人で10台のサーバを持つより，10000人で10000台のサーバを持つ方が良いというのが，
+クラウドコンピューティングの基本的な考え方である\cite{t25}．
+
+クラウドコンピューティングという単語は依然バズワードであると言われ，
+学術的に捉えるか商用的に捉えるかでもその定義が変わり，事実，多様な実現形態が存在する\cite{t10,t11}．
+しかし，以上の観察に基づくと，最低限の共通の要請として，
+\begin{itemize}
+\item 負荷の増減に応じて柔軟に計算規模を拡張/縮小できること
+\item （何らかのポリシーに基づいて）共有資源を利用者間でスケジューリングできること
+\end{itemize}
+の2点は，クラウドコンピューティングサービスを実現する上で必須と言える．
+そこで本稿では，この2つの要請をどう実現するかに着眼しつつ，
+既存のクラウドコンピューティングサービスを分析すると同時に，
+新たにスレッドマイグレーション型モデルを提案し，それに適用できる要素技術について検討していく．
+
+\subsection{本稿の構成}
+
+第\ref{sec:cloud}節では，上記の2つの要請に着眼しつつ，
+Amazon EC2およびGoogle App Engineについて分析し，
+その分析に基づいてスレッドマイグレーション型モデルによるクラウドコンピューティングサービスを提案する．
+第\ref{sec:thread}節では，スレッドマイグレーション型モデルにとって必要なカーネルスレッドマイグレーションに関する技術を紹介し，
+第\ref{sec:memory}節では，高速なメモリマイグレーションの技術を紹介する．
+
+\section{クラウドコンピューティングサービス}
+\label{sec:cloud}
+
+\subsection{動機付け}
+
+本節では，Amazon EC2，Google App Engine，スレッドマイグレーション型モデルの
+各クラウドコンピューティングサービスに関して，
+\begin{itemize}
+\item 何を単位として計算規模の拡張/縮小を実現しているか
+\item 利用者間で資源をどのようにスケジューリングしているか
+\end{itemize}
+に着眼してそれぞれの特徴を分析する．
+後者に関しては，\figref{fig:ex}(C)に示す状況が発生した場合，
+つまり，すでに利用者Aが多くの資源を利用している状況で利用者Bへの負荷が増大した場合に，
+利用者Bのアプリケーションをどう拡張すれば良いかというシナリオを具体例にして考える．
+
+\subsection{Amazon EC2}
+
+Amazon EC2ではVM（Virtual Machine）が計算規模の拡張/縮小の単位であり，
+利用者は，必要なときにVMを起動/停止することで計算規模の拡張/縮小を実現する．
+Amazon EC2の利点は，VMという汎用的な計算機資源が提供されるため，
+利用者にとって自由度が大きく，実行可能なアプリケーション領域が広いという点である．
+特に，多くの高性能数値計算アプリケーションのような，長時間を要するアプリケーションも実行できる．
+一方で，第一の欠点として，VMは存在しているだけで無視できない量の資源を消費するため，
+課金がCPUの使用時間などではなくVMの起動時間に基づいて行われる．
+よって，たとえばWebアプリケーションの場合，
+クライアントからのリクエストが存在しない限りCPUは消費しないが，
+リクエストを待ち受けるためにVMを起動しているだけで課金されてしまう．
+第二の欠点として，VMの起動/停止には数分を要するため，負荷変動に対して高速に対応しづらい．
+これも，VMの資源消費量が大きいことに起因している．
+
+次に，Amazon EC2が\figref{fig:ex}(C)に示す状況にどう対処しているかを考える．
+Amazon EC2では，各利用者が起動できるVM数がデフォルトでは20個に制限されており，
+それ以上のVMを使用するには詳細な申請を提出しなければならないというルールがある．
+つまり，Amazon EC2では，一時的に急激な高負荷状態に陥ったとしても，それに対応してVM数を急増させることができない．
+このようにAmazon EC2は，負荷変動に対するVM数の急激な変化を抑制するためのルールを敷くことで，
+クラウド環境上に起動されるVM数の変化を緩やかなものにし，利用者全体のVM数を常に大まかに把握できるようにしている．
+そして，利用者全体のVM数が把握できれば，できるだけ資源を枯渇させないような利用者へのVM割り当てを行えるため，
+そもそも\figref{fig:ex}(C)に示すような，利用者Bのアプリケーションを拡張しようにも拡張できない事態には陥りにくい．
+要するに，Amazon EC2では，負荷変動に対する高速な適応性を犠牲にして，
+できる限りクラウド環境内の資源数を枯渇させないような資源のスケジューリングを実現している．
+
+\subsection{Google App Engine}
+
+Google App Engineは，利用者がJavaもしくはPythonで記述したWebアプリケーションを，
+Googleの効率的なインフラストラクチャ上で実行させるためのプラットフォームを提供する．
+Google App Engineにおける計算規模の拡張/縮小の単位は，
+Webアプリケーションに対するクライアントからのリクエストであり，
+リクエストの増減に応じて，Webアプリケーションが実行される資源数が自動的に拡張/縮小され，
+利用者が何の意識を払わずとも負荷分散が図られる．
+2009年11月時点における無料コースでは，1分間に最大7400個ものリクエストが処理可能とされている．
+よって，第一の利点として，負荷変動に対して非常に高速にしかも自動的に適応できる点が挙げられる．
+第二の利点として，実際に使用したCPU時間やネットワークバンド幅に基づいた``真の''課金が行われる．
+すなわち，VMを起動しておくだけで課金されるAmazon EC2とは異なり，
+Google App Engineでは実際にリクエストが届いて資源が利用されない限り課金されない．
+これは，Google App Engineにおける計算資源の拡張/縮小の単位が，
+存在するだけで資源を消費するVMではなく，存在しなければ資源を消費しないリクエストであるという点に起因している．
+
+次に，Google App Engineが\figref{fig:ex}(C)に示す状況にどう対処しているかを考える．
+Google App Engineでは，各リクエストは30秒以内に処理されなければならず，
+30秒以上かかるリクエストは強制終了させられるというルールがある．
+このルールにより，\figref{fig:ex}(C)の状況が起きたとしても，高々30秒待てば利用者Aのアプリケーションは消滅するため，
+利用者Bのアプリケーションを割り当てることが可能になる．
+要するに，Google App Engineは，各リクエストの処理時間を制限することで短時間単位の資源のスケジューリングを実現している．
+したがって，欠点として，Google App Engineでは短時間のアプリケーションしか実行できない．
+たとえば，ソーティングや連立方程式ソルバなどの長時間を要する高性能数値計算アプリケーションを
+30秒区切りでプログラムすることは困難であり，Google App Engine上で実行させることは難しい．
+また，効率的な計算規模の拡張/縮小を自動的に実現するために，
+プラットフォーム的にも典型的なWebアプリケーションに特化した作りになっている．
+
+\subsection{スレッドマイグレーション型モデル}
+\label{sec:cloud_thread}
+
+\begin{table}
+  \centering
+  \caption{Characteristics comparison between three Cloud Computing Services
+    （サービス名に関しては，EC2=Amazon EC2，スレッド型=スレッドマイグレーション型モデル，GAE=Google App Engine）.}
+  \label{tab:cloud}
+  \begin{tabular}{rccc}\hline
+    サービス名&EC2&スレッド型&GAE\\\hline
+    拡張/縮小の単位&VM&スレッド&リクエスト\\
+    資源消費量&大&中間&小\\
+    課金の粒度&粗粒度&中間&細粒度\\
+    負荷変動への適応性&低速&中間&高速\\
+    実行可能なアプリ領域&広い&中間&狭い\\
+    長時間アプリの実行&可能&可能&不可能\\\hline
+  \end{tabular}
+\end{table}
+
+以上で述べたAmazon EC2およびGoogle App Engineの特徴を\tabref{tab:cloud}にまとめる．
+\tabref{tab:cloud}より，Amazon EC2とGoogle App Engineは，
+これらの特徴に関して対照的な性格を持つことが読み取れる．
+そこで，両者の中間的なアプローチ，つまり両者の利点を混合させるアプローチとして，私はスレッドマイグレーション型モデルを提案する．
+
+スレッドマイグレーション型モデルでは，計算規模の拡張/縮小の単位としてスレッドを用いる．
+スレッドマイグレーション型モデルの第一の利点は，スレッドはVMよりも資源消費量が少ないため，
+Google App Engineのように実際のCPU使用時間などに基づく細粒度な課金が可能な点である．
+また第二の利点として，資源消費量の少ないスレッドの起動/停止はVMの起動/停止より軽量なため，
+VMよりも負荷変動に対して高速に適応できる．
+さらに第三の利点として，スレッドマイグレーション型モデルでは，Google App Engineのように実行時間に制限を設けず，
+高性能数値計算アプリケーションのような長時間を要するアプリケーションも実行可能である．
+
+\begin{figure}
+  \centering
+  \includegraphics[width=.5\hsize]{thread.eps}
+  \caption{Resource scheduling in a thread migration-based model.}
+  \label{fig:thread}
+\end{figure}
+
+問題は，このような利点を両立させつついかにして\figref{fig:ex}(C)に示す状況に対処するかであるが，
+スレッドマイグレーション型モデルでは，実行中のスレッドをあるノードから別のノードに移動させることで資源のスケジューリングを行う．
+たとえば，\figref{fig:ex}(C)の場合，利用者Aの実行中のスレッドの何個かを別のノードに移動させ，
+空いたノードに利用者Bのアプリケーションを拡張することで資源のスケジューリングを実現する（\figref{fig:thread}）．
+したがって，欠点として，1個のノード上で多数のアプリケーションが実行される可能性があるため，
+実行中のアプリケーションの品質を保証できない．
+各アプリケーションの品質はクラウド環境全体の負荷状況によって決定される．
+すなわち，クラウド環境全体の負荷が低ければスレッドは多数のノードに効率的に分散されて実行されるが，
+クラウド環境全体の負荷が高ければ多数のスレッドが少数のノード上に詰め込まれて実行されることになる．
+
+このように，スレッドマイグレーション型モデルには欠点もあるが，
+Amazon EC2とGoogle App Engineの中間的存在として魅力的な利点を備えている．
+以降では，スレッドマイグレーション型モデルを実現するための要素技術として，
+カーネルスレッドマイグレーションと高速なメモリマイグレーションの手法について検討していく．
+
+\section{カーネルスレッドマイグレーション}
+\label{sec:thread}
+
+\subsection{ポインタ無効化の問題点と対処策}
+
+スレッドマイグレーション\cite{t4,t5,t6,t7,t8,t9}とは，
+実行中のスレッドをあるノードから別のノードに移動させることである．
+以降では特にカーネルスレッドを考え，各ノードでは同一プロセス内に複数のカーネルスレッドが実行されており，
+かつこれらのカーネルスレッドはメモリアクセスしか行わないことを仮定する．
+つまり，ファイルアクセスやネットワーク通信などは考慮しない．
+カーネルスレッドの実体はCPUレジスタとメモリ領域（スタック領域$+$ヒープ領域）から構成されており，
+メモリ領域内には，メモリ領域内のアドレスを指し示すポインタが複数含まれている．
+
+以上のような状況で，単純にノード$S$上のカーネルスレッド$T$をノード$D$に移動させるとポインタ無効化の問題が起きる．
+特に何の対策も行わなければ，移動元のノード$S$でカーネルスレッド$T$が使用していたアドレス領域$a$が，
+移動先のノード$D$上のプロセスにおいて空いている保証はない．
+よって，一般には，ノード$D$では空いている適当なアドレス領域$b$にカーネルスレッド$T$のメモリ領域を配置して
+カーネルスレッド$T$を復帰させることになるが，
+このときメモリ領域内に含まれるポインタはメモリ領域がアドレス領域$a$に配置されていることを仮定した値になっているため，
+カーネルスレッド$T$は正しく動作しない\cite{t4,t5,t8,t9}．
+
+このポインタ無効化の問題には大きく分けて2つの解決策が提案されている．
+第一の解決策は，移動先のノード$D$において，
+メモリ領域に含まれる全ポインタを，アドレス領域$b$に合わせて完全に正しく更新する手法である．
+この手法を取る場合，ポインタは単なる整数値に過ぎないため，整数値とポインタを見分ける手段が必要となる．
+手法\cite{t8}では，ポインタ登録用の関数を提供することで，
+どれがポインタなのかをプログラマに明示的に指示させるアプローチを取っている．
+しかし，複雑なプログラムにおいて全てのポインタをプログラマに漏れなく登録させるのは困難な上，
+各種ライブラリ呼び出しの内部などでプログラマからは暗黙的に作られてしまうポインタには対処できない．
+一方，手法\cite{t9}は，コンパイルの段階においてソースコードレベルでポインタを検出して，
+実行バイナリにポインタ検査のための命令を仕込むアプローチを取っている．
+また，C言語におけるポインタ型から整数値型へのキャスト，共用体内に含まれるポインタなど，
+ポインタと整数値の区別が難しいいくつかの場合に対する対処策も提示されている．
+しかし，この手法でも，ソースコードが与えられないライブラリ呼び出し中のポインタは検出できない．
+以上をまとめると，ポインタと整数値が本質的に同じものである以上，どうしても両者を区別できない場合が存在するため，
+移動先のノード$D$においてポインタを完全に正しく更新することは困難だと言える．
+
+第二の解決策は，あるカーネルスレッドが使用しているアドレス領域が他のいかなるカーネルスレッドによっても
+使用されないことを保証することで，
+移動元と移動先で常に同一アドレス領域にカーネルスレッドのメモリ領域を配置できることを保証する手法である．
+これは最も単純には，各カーネルスレッドが使用するアドレス領域が重複しないように，
+各カーネルスレッドが使用するアドレス領域を静的に決め打つことで実現できるが，これではカーネルスレッドの動的な増減に対応できない．
+そこで，動的なメモリ領域確保に対しても，割り当てられるアドレス領域の一意性を保証する手法が必要になる．
+これは最も単純には，
+\begin{enumerate}
+\item メモリ領域確保時に，空いているアドレス領域を全カーネルスレッドに問い合わせる．
+\item 全カーネルスレッドの空いているアドレス領域の共通部分を取り，そのアドレス領域にメモリを確保する．
+\end{enumerate}
+という手順を踏むことで実現可能だが，メモリ確保の度に全ノードとの通信を行うのは明らかに非効率である．
+よって，次節では，これをより効率的に実現するアルゴリズムとしてIso-address\cite{t4,t5}を紹介する．
+
+\subsection{Iso-address}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\hsize]{iso.eps}
+  \caption{Memory allocation/deallocation based on Iso-address.}
+  \label{fig:iso}
+\end{figure}
+
+Iso-addressでは，アドレス領域全体をスロットと呼ばれる複数の小領域に分割し，
+初期的に，全スロットを全ノードに分散配置する．
+最適なスロットサイズはアプリケーション依存であるが，論文\cite{t4}では64KBに設定されている．
+以下では，アドレス領域を384KB，スロットサイズを64KB，ノード数を2個とし，
+この6スロットのうち，初期状態として，スロット1〜3をノード$S$に，
+スロット4〜6をノード$D$に配置した場合を例にして説明する（\figref{fig:iso}(A)）．
+
+第一に，カーネルスレッド$T$がメモリ領域を確保する際には，
+カーネルスレッド$T$が所属するノードのスロットを取得し，そのスロットが示すアドレス領域にメモリ領域を確保する．
+たとえば，ノード$S$上のカーネルスレッド$T$が50KBのメモリ領域を確保する際には，
+たとえばスロット2を取得してメモリ領域を割り当てる（\figref{fig:iso}(B)）．
+この操作はノード内で完結するためノード間通信は生じない．
+第二に，カーネルスレッド$T$がノード$S$からノード$D$に移動する場合を考えると，
+スロットは初期的に全ノードに重複なく分散配置されているため，
+移動先でスロット2が使用されていないことが保証される．
+これにより，移動元と移動先で常に同一のアドレス領域にメモリ領域を割り当てられることが保証できるため，ポインタ無効化の問題が発生しない．
+第三に，メモリ領域を解放する際には，
+その時点でカーネルスレッド$T$が所属するノードに対してスロットの返却が行われる（\figref{fig:iso}(C)）．
+この操作もノード内で完結するためノード間通信は生じない．
+このように，カーネルスレッドの移動に伴って，全ノードを通じたスロット配置が変化する．
+
+しかし，以上の手順だけだと，ノード内に十分なスロットが存在しない場合にメモリ領域の確保が失敗するという問題が生じる．
+たとえば\figref{fig:iso}(C)の状態では，カーネルスレッド$T$は連続する200KBのメモリ領域を確保できない．
+このような場合には，ノード間通信を行い，適当なノードからスロットを奪ってくることで対処する（\figref{fig:iso}(D)）．
+ただし，このようなノード間通信が多発するとアプリケーションの性能が劣化するため，
+スロットサイズや初期的なスロット配置を適切に選択することが重要になる．
+
+\section{高速なメモリマイグレーション}
+\label{sec:memory}
+
+\subsection{動機付け}
+
+前述のIso-addressなどのカーネルスレッドマイグレーション技術を利用すれば，
+ひとまず以下の手順でノード$S$からノード$D$へカーネルスレッド$T$を移動できる：
+\begin{enumerate}
+\item ノード$S$でカーネルスレッド$T$を停止する．
+\item CPUレジスタとメモリ領域をノード$S$からノード$D$に移動する．
+\item ノード$D$でカーネルスレッド$T$を復帰する．
+\end{enumerate}
+
+しかし，この手順では，CPUレジスタとメモリ領域の転送時間がカーネルスレッド$T$の停止時間になるため，
+カーネルスレッド$T$が使用しているメモリ領域が大きい場合には停止時間が長くなってしまう．
+そこで，本節では，メモリ領域の転送を工夫することで停止時間を短縮化する手法として，
+Pre-copy\cite{t2}とPost-copy\cite{t1}のアプローチについて紹介する．
+要約すれば，Pre-copyはカーネルスレッド$T$の移動前にメモリ領域を移動させる手法であり，
+Post-copyはカーネルスレッド$T$の移動後にメモリ領域を移動させる手法である．
+
+\subsection{Pre-copy}
+
+\subsubsection{アルゴリズム}
+
+Pre-copyは複数回のラウンドから構成される．
+まず，ラウンド1では，OSのページ単位でのメモリ保護機構を利用して，
+カーネルスレッド$T$のメモリ領域の全ページのアクセス保護属性をライトアクセス禁止に設定する．
+そして，カーネルスレッド$T$とは別のバックグラウンドプロセスを使って全メモリ領域をノード$S$からノード$D$に移動する．
+この間，カーネルスレッド$T$はメモリマイグレーションとは関係なくノード$S$で実行を継続できる．
+また，全ページをライトアクセス禁止に設定していることを利用して，
+カーネルスレッド$T$によってライトアクセスが行われたページを全て検出して記録しておく．
+バックグラウンドプロセスによる全メモリ領域のコピーが完了した時点でラウンド1が完了する．
+次に，ラウンド2では，再びカーネルスレッド$T$のメモリ領域の全ページのアクセス属性をライトアクセス禁止に設定した上で，
+バックグラウンドプロセスを使って，ラウンド1でライトアクセスが行われたページのみをノード$S$からノード$D$に移動する．
+つまり，ページの最新状態がまだノード$D$に伝えられていないページのみ，ノード$S$からノード$D$に移動する．
+また，このメモリマイグレーションの間に，ノード$S$上のカーネルスレッド$T$によってライトアクセスが行われたページを全て検出して記録しておく．
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\hsize]{timeline.eps}
+  \caption{Timelines of Pre-copy and Post-copy.}
+  \label{fig:timeline}
+\end{figure}
+
+以降，一般にラウンド$n$では，カーネルスレッド$T$のメモリ領域の全ページのアクセス属性をライトアクセス禁止に設定した上で，
+バックグラウンドプロセスを使って，ラウンド$n-1$でライトアクセスが行われたページのみをノード$S$からノード$D$に移動する．
+このようなラウンドを，直前のラウンドにおいてライトアクセスが行われたページ数が十分に小さくなるか，
+もしくはラウンド回数が一定数に達するまで繰り返す．
+最後に，ノード$S$上のカーネルスレッド$T$を停止させ，
+CPUレジスタと最終ラウンドにおいてライトアクセスが行われたページ全てをノード$S$からノード$D$に移動する．
+その後，ノード$D$上でカーネルスレッド$T$を復帰させることで，カーネルスレッドマイグレーションが完了する．
+以上のPre-copyのタイムラインを\figref{fig:timeline}(A)に示す．
+
+このPre-copyの欠点は，ライトアクセスが行われたページが何度もノード$S$からノード$D$に移動される可能性があることだが，
+これに関しては，メモリアクセスの時間的局所性に基づき余分なページを重複転送しないための改善策が提案されている\cite{t2}．
+具体的には，過去のラウンドにおいてライトアクセスが度々発生しているページは
+今後のラウンドにおいても再びライトアクセスされる可能性が高いため，
+ラウンド$n$では，ラウンド$n-1$でライトアクセスが行われたページ全てを移動するのではなく，
+ラウンド$n-1$でライトアクセスが行われたページのうち
+過去のラウンドであまりライトアクセスが行われていないページのみを移動することで，
+ライトアクセスが多発するページの重複転送を低減できる．
+
+\subsubsection{特徴}
+
+Pre-copyの利点は，メモリマイグレーションが完全にバックグラウンドプロセスによって実行されるため，
+アプリケーションの性能劣化が小さい点である．
+一方，第一の欠点として，ライトアクセスが行われたページが重複転送される可能性があり，
+実際に使用しているページ数以上のページ数の移動が行われるため，ネットワークバンド幅が浪費されてしまう．
+この影響は，リードアクセス中心のアプリケーションでは無視できるがライトアクセス中心のアプリケーションでは顕著になる．
+よって，第二の欠点として，メモリマイグレーションに要するコストがアプリケーション依存になるという点が指摘できる．
+また，第三の欠点として，特にライトアクセス中心のアプリケーションでは
+停止時間中に移動させなければならないページ数が多くなるため，停止時間が長くなってしまう．
+
+\subsection{Post-copy}
+
+\subsubsection{アルゴリズム}
+
+まず基本アイディアから述べる．
+Post-copyでは，まず，ノード$S$上でカーネルスレッド$T$を停止させ，
+CPUレジスタのみをノード$S$からノード$D$に移動する．
+次に，ノード$D$上で全ページの保護属性をリードアクセス禁止かつライトアクセス禁止に設定した上で，
+ノード$D$上でカーネルスレッド$T$を復帰させる．
+当然，この状態では，カーネルスレッド$T$による全てのリードアクセスとライトアクセスはメモリ保護違反を引き起こすが，
+このメモリ保護違反を契機として，ノード$S$に該当ページを要求してノード$D$に移動することによって，
+カーネルスレッド$T$の実行を継続させる．
+すなわち，カーネルスレッド$T$のアクセス違反を契機として，
+demand-drivenにノード$S$からノード$D$へメモリマイグレーションを行う．
+
+以上がPost-copyの基本アイディアであるが，この基本アイディアには問題がある．
+第一の問題として，アクセス違反の度にノード$S$に対してページ移動の要求を発行していては，アプリケーションの性能劣化が著しい．
+第二の問題として，ノード$D$上のカーネルスレッド$T$によってアクセスされないページは永久にノード$S$に残存するため，
+いつまで経っても移動元ノードとの依存関係が解消できない．
+これらの問題は，Post-copyが``pull型''でしかメモリマイグレーションを行わないという点に起因しているため，
+問題を解決するためには``push型''の因子を追加すれば良い．
+すなわち，カーネルスレッド$T$とは別のバックグラウンドプロセスを用意して，
+ノード$S$からノード$D$に強制的なメモリマイグレーションを行えば良い．
+
+\begin{figure}
+  \setlength{\baselineskip}{10pt}
+\zk{var} \zv{N} $\gets$ the total number of pages\\
+\zk{var} \zv{bitmap}[0..\zv{N} $-$ 1] $\gets$ \{0, 0, $\ldots$, 0\}\\
+\zk{var} \zv{pivot} $\gets$ 0\\
+\zk{var} \zv{bubble} $\gets$ 0\\
+\zt \\
+A background procedure :\\
+\zt \zk{while} \zv{bubble} < max(\zv{pivot}, \zv{N} $-$ \zv{pivot}) \zk{do}\\
+\zt\zt \zv{left} $\gets$ max(0, \zv{pivot} $-$ \zv{bubble})\\
+\zt\zt \zv{right} $\gets$ min(\zv{N} $-$ 1, \zv{pivot} + \zv{bubble})\\
+\zt\zt \zk{if} \zv{bitmap}[\zv{left}] = 0 \zk{then}\\
+\zt\zt\zt \zv{bitmap}[\zv{left}] $\gets$ 1\\
+\zt\zt\zt queue the page \zv{left} for transmission\\
+\zt\zt \zk{endif}\\
+\zt\zt \zk{if} \zv{bitmap}[\zv{right}] = 0 \zk{then}\\
+\zt\zt\zt \zv{bitmap}[\zv{right}] $\gets$ 1\\
+\zt\zt\zt queue the page \zv{right} for transmission\\
+\zt\zt \zk{endif}\\
+\zt\zt \zv{bubble} $\gets$ \zv{bubble} + 1\\
+\zt \zk{endwhile}\\
+\zt \\
+When a page fault on a page \zv{p} occurred :\\
+\zt \zk{if} \zv{bitmap}[\zv{p}] = 0 \zk{then}\\
+\zt\zt \zv{bitmap}[\zv{p}] $\gets$ 1\\
+\zt\zt transmit the page \zv{p} immediately\\
+\zt\zt discard pending queue\\
+\zt\zt \zv{pivot} $\gets$ \zv{p}\\
+\zt\zt \zv{bubble} $\gets$ 1\\
+\zt \zk{endif}\\
+\caption{An algorithm which migrates pages from a source node to a destination node, considering temporal access locality.}
+\label{fig:pivot}
+\end{figure}
+
+\begin{table}
+  \centering
+  \caption{Characteristics comparison between Pre-copy and Post-copy
+    （移動ページ数に関する「同じ」「ほぼ同じ」の比較対象は，
+    実際に使用されているページ数である）.}
+  \label{tab:copy}
+  \begin{tabular}{rccc}\hline
+    手法&Pre-copy&Post-copy\\\hline
+    リード中心アプリの移動ページ数&ほぼ同じ&同じ\\
+    ライト中心アプリの移動ページ数&多い&同じ\\
+    多様なアプリに対する安定性&低い&高い\\
+    停止時間&長い&短い\\
+    アプリの性能劣化&小さい&大きい\\\hline
+  \end{tabular}
+\end{table}
+
+\begin{figure*}
+  \centering
+  \begin{minipage}{0.32\hsize}
+    \includegraphics[width=\hsize]{result1.eps}
+  \end{minipage}
+  \begin{minipage}{0.32\hsize}
+    \includegraphics[width=\hsize]{result2.eps}
+  \end{minipage}
+  \begin{minipage}{0.32\hsize}
+    \includegraphics[width=\hsize]{result3.eps}
+  \end{minipage}
+  \caption{Performance comparison between Pre-copy and Post-copy in VM migration\cite{t1}．}
+  \label{fig:result}
+\end{figure*}
+
+さらに，このバックグラウンドプロセスによるメモリマイグレーションは，
+カーネルスレッド$T$のメモリアクセスの時間的局所性に基づいた順序で行われることが望ましい．
+このようなアルゴリズムとして，論文\cite{t1}では\figref{fig:pivot}に示すアルゴリズムが示されている．
+このアルゴリズムでは，ノード$S$に$pivot$という変数を用意し，
+最も直近にノード$D$上のカーネルスレッド$T$においてアクセス違反のあったページを管理させる．
+そして，ノード$S$上のバックグラウンドプロセスを利用して，
+$pivot$の左右両側に広がる順序で，ページをノード$S$からノード$D$に移動する．
+ノード$D$上のカーネルスレッド$T$が別のページに対してアクセス違反を引き起こした場合，
+その瞬間に$pivot$の値はそのページに更新され，
+今度はその$pivot$の左右両側に広がる順序で，ノード$S$からノード$D$へのページ移動が進行していく．
+要するに，このアルゴリズムでは，カーネルスレッド$T$がページ$p$でアクセス違反を引き起こした場合に，
+近い将来にページ$p$の周辺でアクセス違反が起きるだろうという予測を根拠として，
+最も直近にアクセス違反があったページの周辺から優先的にページ移動を行う．
+以上のPost-copyのタイムラインを\figref{fig:timeline}(B)に示す．
+
+\subsubsection{特徴}
+
+Post-copyの第一の利点として，停止時間中にはCPUレジスタのみを移動すれば良いため，停止時間が短い．
+第二の利点としては，Post-copyでは，移動されるページ数が実際に使用されているページ数と一致するため，
+ネットワークバンド幅を余分に消費することがない．
+これは，リードアクセス中心のアプリケーションでもライトアクセス中心の
+アプリケーションでもメモリマイグレーションに要するコストが等しいことを意味するため，
+第三の利点として，さまざまなアプリケーションに対する挙動の安定性が指摘できる．
+一方で，欠点として，アクセス違反発生の度にアプリケーションの性能が劣化する．
+
+\subsection{Pre-copy vs Post-copy}
+
+Pre-copyとPost-copyの特徴を\tabref{tab:copy}に比較する．
+また，Pre-copyとPost-copyを（スレッドマイグレーションではなく）VMマイグレーション\cite{t1,t2,t3}の手段として適用し，
+SpecWeb2005，Kernel Compile，BitTorrent，NetPerfの4つのアプリケーションを実行中にVMを移動させた場合における，
+移動ページ数，VMマイグレーションの所要時間，VMの停止時間を\figref{fig:result}に示す．
+\figref{fig:result}において，Post-copyの停止時間がPre-copyより長いのは前述の考察と異なるが，
+これは，実装を簡略化するために，Post-copyの停止時間の中で，
+移動元ノードに存在する全ページを一度仮想的なデバイスにスワップアウトさせる処理を挟んでいるためである．
+アプリケーションや実験条件の詳細は論文\cite{t1}を参照されたい．
+
+一般に，Pre-copyとPost-copyのいずれが優れているかは目的に依存するが，
+クラウドコンピューティングサービスにおけるスレッドマイグレーション型モデルを実現する上ではPost-copyの方が適している．
+なぜなら，\ref{sec:cloud_thread}節で述べたように，
+スレッドマイグレーション型モデルでは負荷変動に対して高速に適応できるような資源のスケジューリングが重要になるため，
+移動元のノードで長らくスレッドが実行され続けるPre-copyよりも，
+移動の必要が生じた場合には直ちに移動元のノードからスレッドが退去するPost-copyの方が望ましいためである．
+
+\section{結論}
+\label{sec:concl}
+
+多数の計算資源を要求する並列分散アプリケーションの増加に伴い，
+計算資源を必要なときに必要な量だけ，従量制課金のサービスとして利用できるクラウドコンピューティングの重要性が高まっている．
+クラウドコンピューティングには多様な形態が存在するが，
+\begin{itemize}
+\item 負荷の増減に応じて柔軟に計算規模を拡張/縮小できること
+\item （何らかのポリシーに基づいて）共有資源を利用者間でスケジューリングできること
+\end{itemize}
+が最低限の共通の要請として課せられる．
+本稿では，この2つの要請に着眼しつつ，Amazon EC2とGoogle App Engineについて分析した上で，
+その中間的存在として，スレッドマイグレーション型モデルに基づくクラウドコンピューティングサービスの形態を提案した．
+さらに，スレッドマイグレーション型モデルを効率的に実現するための要素技術として，
+カーネルスレッドマイグレーションのためのIso-address，
+高速なメモリマイグレーションのためのPre-copyとPost-copyを紹介した．
+特に，Pre-copyとPost-copyの特徴を比較し，
+スレッドマイグレーション型モデルに対してはPost-copyの方が適していることを指摘した．
+
+%\bibliographystyle{jplain}
+%\bibliography{paper}
+
+\begin{thebibliography}{10}
+
+\bibitem{t20}
+{Amazon EC2}.
+\newblock http://aws.amazon.com/ec2/.
+
+\bibitem{t21}
+{Google App Engine}.
+\newblock http://code.google.com/intl/\\appengine/.
+
+\bibitem{t24}
+{Google Docs}.
+\newblock http://docs.google.com/.
+
+\bibitem{t23}
+{Salesforce.com}.
+\newblock http://www.salesforce.com/.
+
+\bibitem{t22}
+{Windows Azure}.
+\newblock http://www.microsoft.com/\\windowsazure/.
+
+\bibitem{t4}
+Gabriel Antoniu, Luc Bouge, and Raymond Namyst.
+\newblock {An Efficient and Transparent Thread Migration Scheme in the PM2
+  Runtime System}.
+\newblock {\em Proceedings of the 11 IPPS/SPDP'99 Workshops Held in Conjunction
+  with the 13th International Parallel Processing Symposium and 10th Symposium
+  on Parallel and Distributed Processing}, pp. 496--510, 1999.
+
+\bibitem{t5}
+Gabriel Antoniu and Christian Perez.
+\newblock {Using Preemptive Thread Migration to Load-Balance Data-Parallel
+  Applications}.
+\newblock {\em Proceedings of the 5th International Euro-Par Conference on
+  Parallel Processing}, pp. 117--124, 1999.
+
+\bibitem{t12}
+Rajkumar Buyya, Chee~Shin Yeo, Srikumar Venugopal, James Broberg, and Ivona
+  Brandic.
+\newblock {Cloud Computing and Emerging IT Platforms: Vision, Hype, and Reality
+  for Delivering Computing as the 5th Utility}.
+\newblock {\em Future Generation Computer Systems}, Vol.~25, pp. 599--616, 12
+  2008.
+
+\bibitem{t2}
+Christopher Clark, Keir Fraser, Steven Hand, Jacob~Gorm Hansenf, Eric Julf,
+  Christian Limpach, Ian Pratt, and Andrew Warfield.
+\newblock {Live migration of virtual machines}.
+\newblock {\em Proceedings of the 2nd conference on Symposium on Networked
+  Systems Design and Implementation}, Vol.~2, pp. 273--286, 2005.
+
+\bibitem{t8}
+David Cronk, Matthew Haines, and Piyush Mehrotra.
+\newblock {Thread Migration in the Presence of Pointers}.
+\newblock {\em Proceedings of the 30th Hawaii International Conference on
+  System Sciences: Software Technology and Architecture}, Vol.~1, pp. 292--302,
+  1997.
+
+\bibitem{t9}
+Hai Jiang and Vipin Chaudhary.
+\newblock {On Improving Thread Migration: Safety and Performance}.
+\newblock {\em Proceedings of the 9th International Conference on High
+  Performance Computing}, pp. 474--484, 2002.
+
+\bibitem{t6}
+K.Thitikamol and P.Keleher.
+\newblock {Thread migration and communication minimization in DSM systems}.
+\newblock {\em Proceedings of the IEEE, Special Issue on Distributed Shared
+  Memory}, Vol.~87, pp. 487--497, 3 1999.
+
+\bibitem{t3}
+H.Andres Lagar-Cavilla, Joseph A.Whitney, Adin Scannell, Philip Patchin,
+  Stephen M.Rumble, Eyal de~Lara, Michael Brudno, and M.Satyanarayanan.
+\newblock {SnowFlock: rapid virtual machine cloning for cloud computing}.
+\newblock {\em Proceedings of the 4th ACM European conference on Computer
+  systems}, pp. 1--12, 2009.
+
+\bibitem{t11}
+L.Vaquero, L.Rodero-Marino, J.Caceres, and M.Lindner.
+\newblock {A Break in the Clouds : Towards a Cloud Definition}.
+\newblock {\em SIGCOMM Computer Communication Review}, pp. 137--150, 2009.
+
+\bibitem{t10}
+Armbrust M., A.Fox, R.Griffith, A.D.Joseph, R.Katz, A.Konwinski, G.Lee,
+  D.A.Patterson, A.Rabkin, I.Stoica, and M.Zaharia.
+\newblock {Above the Clouds: A Berkeley View of Cloud Computing}.
+\newblock Technical report, UC Berkeley Reliable Adaptive Distributed Systems
+  Laboratory, 2 2009.
+
+\bibitem{t1}
+Michael R.Hines and Kartik Gopalan.
+\newblock {Post-copy based live virtual machine migration using adaptive
+  pre-paging and dynamic self-ballooning}.
+\newblock {\em Proceedings of the 2009 ACM SIGPLAN/SIGOPS international
+  conference on Virtual execution environments}, pp. 51--60, 2009.
+
+\bibitem{t7}
+Wenzhang Zhu, Cho-Li Wang, and Lau F.C.M.
+\newblock {JESSICA2: a distributed Java Virtual Machine with transparent thread
+  migration support}.
+\newblock {\em Fourth IEEE International Conference on Cluster Computing}, pp.
+  381--388, 2002.
+
+\bibitem{t25}
+田浦健次朗.
+\newblock {クラウド時代の基盤ソフトウェア，ツール，プログラミングシステム}.
+\newblock 東京大学 情報理工学系研究科 講演会, 10 2009.
+
+\end{thebibliography}
+
+
+\end{document}

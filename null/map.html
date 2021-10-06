@@ -1,0 +1,54 @@
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+<script src="http://maps.google.com/maps/api/js?libraries=places&sensor=false"></script>
+</head>
+<body>
+<div id="mapCanvas" style="width:800px; height:800px"></div>
+<button onclick="search()">検索</button>
+<div id="searchResult"></div>
+<script>
+var map;
+initialize();
+
+function initialize() {
+  var position = new google.maps.LatLng(35.660365,139.729093);
+  var options = {zoom: 14, center: position, mapTypeId: google.maps.MapTypeId.ROADMAP};
+  var mapCanvas = document.getElementById("mapCanvas");
+  map = new google.maps.Map(mapCanvas, options);
+}
+
+function search() {
+  var options = {bounds: map.getBounds(), keyword: "カフェ"};
+  var service = new google.maps.places.PlacesService(map);
+  service.search(options, searchDone);
+}
+
+function searchDone(places, status) {
+  var result = "";
+  if (status == google.maps.places.PlacesServiceStatus.OK) {
+    for (var i = 0; i < places.length; i++) {
+      createMarker(places[i]);
+    }
+    result = "【検索結果】<br />";
+    for (var i = 0; i < places.length; i++) {
+      result += places[i].name + "（" + places[i].vicinity + "） 評価＝" + places[i].rating + "<br />";
+    }
+  } else {
+    result = "検索中にエラーが発生しました：" + status;
+  }
+
+  var searchResult = document.getElementById("searchResult");
+  searchResult.innerHTML = result;
+}
+
+function createMarker(place) {
+  console.log(place);
+  var options = {position: place.geometry.location, map: map};
+  var marker = new google.maps.Marker(options);
+  marker.setMap(map);
+}
+</script>
+</body>
+</html>

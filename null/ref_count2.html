@@ -1,0 +1,14 @@
+<html>
+<body>
+<script>
+div = document.createElement("div");
+document.body.appendChild(div);
+div.innerHTML = '<p><p><p><span id="span"><br><br><br>text</span></p></p></p>';
+span = document.getElementById("span");
+div.innerHTML = "";
+alert("span = " + span);
+alert("span.parentNode = " + span.parentNode);
+alert("span.firstChild = " + span.firstChild);
+</script>
+</body>
+</html>

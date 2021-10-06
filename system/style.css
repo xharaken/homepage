@@ -1,0 +1,445 @@
+*
+{ 
+    margin : 0;
+    padding : 0;
+    font-family : sans-serif;
+}
+
+body
+{ 
+    text-align : center;
+    line-height : 1.5em;
+    font-size : 12pt;
+    color : #000000;
+    background-color : #ffffff;
+}
+
+img
+{
+    max-width : 640px;
+    max-height : 640px;
+}
+
+div
+{ 
+    margin : auto;
+}
+
+div.base
+{ 
+    width : 960px;
+}
+
+div.top
+{
+    width : 960px;
+    height : 80px;
+    background-image : url(top.png);
+/*background-color : #ffffff;*/
+}
+
+div.logo
+{
+    width : 840px;
+    font-size : 36pt;
+    text-align : left;
+    padding-top : 40px;
+}
+
+div.bottom
+{
+    width : 960px;
+    height : 80px;
+    background-image : url(bottom.png);
+/*background-color : #ffffff;*/
+}
+
+div.background1
+{
+    width : 960px;
+    background-image : url(background1.png);
+    background-repeat : repeat-y;
+/*background-color : #ffffff;*/
+}
+
+div.background2
+{
+    width : 960px;
+    background-image : url(background2.png);
+    background-repeat : repeat-y;
+/*background-color : #ffffff;*/
+}
+
+div.line1
+{
+    width : 840px;
+    height : 22px;
+    background-image : url(line1.png);
+    background-repeat : no-repeat;
+/*background-color : #ffffff;*/
+}
+
+div.reduction
+{
+    height : 10px;
+}
+
+div.contents
+{ 
+    width : 840px;
+}
+
+div.subtitle
+{
+    margin-top : 10px;
+    margin-bottom : 10px;
+    text-align : left;
+    font-size : 18pt;
+}
+
+div.toolbar
+{
+    width : 840px;
+    text-align : left;
+    border-collapse : collapse;
+    padding-bottom : 6px;
+}
+
+div.path
+{ 
+    width : 840px;
+    text-align : left;
+    border-collapse : collapse;
+    padding-top : 6px;
+    padding-bottom : 6px;
+    font-size : 16pt;
+}
+
+span.counter
+{
+    color : #ff9600;
+    font-size : 16pt;
+    font-weight : bold;
+    font-style : italic;
+}
+
+div.left
+{
+    width : 840px;
+    text-align : left;
+}
+
+div.right
+{
+    width : 840px;
+    text-align : right;
+}
+
+div.table
+{
+}
+
+p
+{ 
+    margin-bottom : 1em;
+}
+
+p.menuitem
+{ 
+    font-size : 16pt;
+    margin-top : 0.5em;
+    margin-bottom : 0em;
+}
+
+p.abstract
+{ 
+    padding-left : 40px;
+    margin-bottom : 0em;
+}
+
+p.left_text
+{ 
+    padding-top : 1em;
+    padding-bottom : 1em;
+    text-align : left;
+}
+
+p.center_text
+{ 
+    padding-top : 1em;
+    padding-bottom : 1em;
+    text-align : center;
+}
+
+p.name
+{ 
+    margin : 5px;
+    text-align : left;
+}
+
+span.blue
+{ 
+    color : #ff9600;
+}
+
+span.red
+{ 
+    color : #ff0000;
+}
+
+span.date
+{ 
+    font-size : 12pt;
+}
+
+h1
+{ 
+    font-size : 16pt;
+    margin-top : 15px;
+    margin-bottom : 15px;
+    padding-left : 10px;
+    text-align : left;
+    border-collapse : collapse;
+    border-left : 20px solid #ff9600;
+    border-bottom : 2px solid #ff9600;
+    background-color : #fff1c8;
+}
+
+h2
+{ 
+    font-size : 12pt;
+    margin-top : 15px;
+    margin-bottom : 15px;
+    padding-left : 10px;
+    text-align : left;
+    border-collapse : collapse;
+    border-left : 20px solid #ff9600;
+    border-bottom : 2px solid #ff9600;
+}
+
+h3
+{ 
+    font-size : 12pt;
+    margin-top : 15px;
+    margin-bottom : 15px;
+    padding-left : 10px;
+    text-align : left;
+    border-collapse : collapse;
+    border-left : 20px double #ff9600;
+}
+
+pre
+{ 
+    width : 100%;
+    line-height : 1.2em;
+    margin-top : 0.5em;
+    margin-bottom : 0.5em;
+    /*overflow : auto;*/
+    overflow-x : auto;
+    overflow-y : visible;
+    padding : 10px;
+    font-size : 12pt;
+    background-color : #fff1c8;
+    border : 2px solid #ff9600;
+}
+* > pre
+{ 
+    width : auto;
+}
+
+pre.thread
+{ 
+    width : 630px;
+}
+
+strong
+{ 
+    font-weight : bold;
+}
+
+em
+{ 
+    font-weight : bold;
+    font-style : normal;
+    color : #ff0000;
+}
+
+ul,ol,dl
+{ 
+    margin-left : 30px;
+}
+
+ol
+{ 
+    margin-left : 30px;
+}
+
+dl
+{ 
+    margin-left : 20px;
+}
+
+dt
+{ 
+    font-weight : bold;
+}
+
+dd
+{
+    margin-left : 10px;
+}
+
+/*
+textarea,input,checkbox
+{ 
+    border : 1px solid #ff9600;
+}
+
+textarea.comment
+{ 
+    width : 100%;
+}
+
+input.item
+{ 
+    width : 40%;
+}
+
+input.file
+{ 
+    width : 50%;
+}
+
+input.captcha
+{ 
+    width : 80px;
+}
+
+input.submit
+{ 
+    width : 100px;
+    font-size : 16pt;
+}
+
+table
+{ 
+    width : 100%;
+    background-color : #fff1c8;
+    border-collapse : collapse;
+    border : 2px solid #ff9600;
+    margin-left : auto;
+    margin-right : auto;
+}
+
+td
+{ 
+    padding : 5px;
+    border : 1px solid #ff9600;
+}
+
+table.forum
+{ 
+}
+
+td.forum_title
+{ 
+    width : 45%;
+    text-align : left;
+}
+
+td.forum_num
+{ 
+    width : 5%;
+    text-align : center;
+}
+
+td.forum_edit
+{ 
+    width : 10%;
+    text-align : center;
+}
+
+td.forum_time
+{ 
+    width : 15%;
+    text-align : center;
+}
+
+td.forum_name
+{ 
+    width : 25%;
+    text-align : center;
+}
+
+table.thread
+{
+    width : 840px;
+}
+
+td.thread_name
+{ 
+    width : 200px;
+    text-align : left;
+    padding-left : 10px;
+}
+
+td.thread_comment
+{ 
+    width : 640px;
+    text-align : left;
+    background-color : #ffffff;
+}
+
+table.form
+{ 
+}
+
+td.form_label
+{ 
+    width : 20%;
+    text-align : left;
+    padding-left : 10px;
+}
+
+td.form_field
+{ 
+    width : 80%;
+    text-align : left;
+}
+
+td.form_submit
+{ 
+    width : 100%;
+    text-align : center;
+}
+*/
+
+a
+{ 
+    color : #0000cc;
+    text-decoration : underline;
+}
+
+a:link
+{ 
+    color : #0000cc;
+    text-decoration : underline;
+}
+
+a:visited
+{ 
+    color : #0000cc;
+    text-decoration : underline;
+}
+
+a:hover
+{ 
+    color : #ff0066;
+    text-decoration : underline;
+}
+
+a:active
+{ 
+    color : #ff0066;
+    text-decoration : underline;
+}

@@ -1,0 +1,150 @@
+[spreadsheet] ReclaimedTrees=84, ReclaimedNodes=4615, WastefullyDerefedChainHeads=6555, LifetimeOwnerTraversal=15
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|                                                |        Trees|        Nodes|ChainHeads(R)|ChainHeads(U)|OrdinaryWrappers(U)|NoWrappers(R)|NoWrappers(U)|LifetimeOwner|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|Reclaimable (Ignored double-counted 80 trees)   |           84|         4615|          146|            0|                  0|         4469|            0|            0|
+|Unreclaimable1 (Root keeps +1)                  |           80|        15478|         3015|          144|               3349|         8920|           50|            0|
+|Unreclaimable1-1 (Root is a +2~ed chain head)   |           44|           80|           32|           44|                  0|            4|            0|            0|
+|Unreclaimable1-2 (Root is a +1~ed wrapper)      |           36|        15398|         2983|          100|               3349|         8916|           50|            0|
+|Unreclaimable1-3 (Root is a +1~ed no-wrapper)   |            0|            0|            0|            0|                  0|            0|            0|            0|
+|Unreclaimable2 (Root becomes +0)                |            5|           56|            6|           39|                  2|            7|            2|            7|
+|Unreclaimable2-1 (Tree has any +2~ed chain head)|            3|           43|            4|           39|                  0|            0|            0|            4|
+|Unreclaimable2-2 (Tree has any +1~ed wrapper)   |            1|           10|            1|            0|                  2|            6|            1|            1|
+|Unreclaimable2-3 (Tree has any +1~ed no-wrapper)|            2|           13|            2|            0|                  2|            7|            2|            3|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+
+[spreadsheet_walk] ReclaimedTrees=2910, ReclaimedNodes=13671, WastefullyDerefedChainHeads=105378, LifetimeOwnerTraversal=8335
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|                                                |        Trees|        Nodes|ChainHeads(R)|ChainHeads(U)|OrdinaryWrappers(U)|NoWrappers(R)|NoWrappers(U)|LifetimeOwner|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|Reclaimable (Ignored double-counted 2320 trees) |         2910|        13671|         4583|            0|                  0|         9088|            0|            0|
+|Unreclaimable1 (Root keeps +1)                  |         1754|       273946|        20005|         3090|              98636|       151897|          318|            0|
+|Unreclaimable1-1 (Root is a +2~ed chain head)   |         1629|        14739|         4032|         2313|                 48|         8346|            0|            0|
+|Unreclaimable1-2 (Root is a +1~ed wrapper)      |          125|       259207|        15973|          777|              98588|       143551|          318|            0|
+|Unreclaimable1-3 (Root is a +1~ed no-wrapper)   |            0|            0|            0|            0|                  0|            0|            0|            0|
+|Unreclaimable2 (Root becomes +0)                |         2165|       242736|        19673|         6685|                167|       216204|            7|         4126|
+|Unreclaimable2-1 (Tree has any +2~ed chain head)|         2024|       217785|        18209|         6685|                 21|       192870|            0|         3647|
+|Unreclaimable2-2 (Tree has any +1~ed wrapper)   |          146|        35691|         3139|          207|                167|        32177|            1|          556|
+|Unreclaimable2-3 (Tree has any +1~ed no-wrapper)|            7|           33|            7|            0|                  2|           17|            7|            6|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+
+[docs] ReclaimedTrees=35, ReclaimedNodes=41, WastefullyDerefedChainHeads=3680, LifetimeOwnerTraversal=11
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|                                                |        Trees|        Nodes|ChainHeads(R)|ChainHeads(U)|OrdinaryWrappers(U)|NoWrappers(R)|NoWrappers(U)|LifetimeOwner|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|Reclaimable (Ignored double-counted 8 trees)    |           35|           41|           39|            0|                  0|            2|            0|            0|
+|Unreclaimable1 (Root keeps +1)                  |           40|         6135|         1746|           68|               1765|         2536|           20|            0|
+|Unreclaimable1-1 (Root is a +2~ed chain head)   |           25|           28|            0|           25|                  0|            2|            1|            0|
+|Unreclaimable1-2 (Root is a +1~ed wrapper)      |           15|         6107|         1746|           43|               1765|         2534|           19|            0|
+|Unreclaimable1-3 (Root is a +1~ed no-wrapper)   |            0|            0|            0|            0|                  0|            0|            0|            0|
+|Unreclaimable2 (Root becomes +0)                |            6|           28|            6|            0|                  2|           14|            6|            5|
+|Unreclaimable2-1 (Tree has any +2~ed chain head)|            0|            0|            0|            0|                  0|            0|            0|            0|
+|Unreclaimable2-2 (Tree has any +1~ed wrapper)   |            1|           10|            1|            0|                  2|            6|            1|            1|
+|Unreclaimable2-3 (Tree has any +1~ed no-wrapper)|            6|           28|            6|            0|                  2|           14|            6|            5|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+
+[docs_walk] ReclaimedTrees=355, ReclaimedNodes=852, WastefullyDerefedChainHeads=12534, LifetimeOwnerTraversal=19
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|                                                |        Trees|        Nodes|ChainHeads(R)|ChainHeads(U)|OrdinaryWrappers(U)|NoWrappers(R)|NoWrappers(U)|LifetimeOwner|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|Reclaimable (Ignored double-counted 228 trees)  |          355|          852|          367|            0|                  0|          485|            0|            0|
+|Unreclaimable1 (Root keeps +1)                  |          475|       134989|         4205|         1862|              75171|        52825|          926|            0|
+|Unreclaimable1-1 (Root is a +2~ed chain head)   |          409|         3063|          222|         1664|                  0|          474|          703|            0|
+|Unreclaimable1-2 (Root is a +1~ed wrapper)      |           66|       131926|         3983|          198|              75171|        52351|          223|            0|
+|Unreclaimable1-3 (Root is a +1~ed no-wrapper)   |            0|            0|            0|            0|                  0|            0|            0|            0|
+|Unreclaimable2 (Root becomes +0)                |           12|           50|           14|            2|                  2|           22|           10|            9|
+|Unreclaimable2-1 (Tree has any +2~ed chain head)|            2|            6|            4|            2|                  0|            0|            0|            2|
+|Unreclaimable2-2 (Tree has any +1~ed wrapper)   |            1|           10|            1|            0|                  2|            6|            1|            1|
+|Unreclaimable2-3 (Tree has any +1~ed no-wrapper)|           10|           44|           10|            0|                  2|           22|           10|            7|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+
+[gmail] ReclaimedTrees=12, ReclaimedNodes=50, WastefullyDerefedChainHeads=586, LifetimeOwnerTraversal=27
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|                                                |        Trees|        Nodes|ChainHeads(R)|ChainHeads(U)|OrdinaryWrappers(U)|NoWrappers(R)|NoWrappers(U)|LifetimeOwner|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|Reclaimable (Ignored double-counted 7 trees)    |           12|           50|           13|            0|                  0|           37|            0|            0|
+|Unreclaimable1 (Root keeps +1)                  |           74|        10754|          152|          114|               1212|         9082|          194|            0|
+|Unreclaimable1-1 (Root is a +2~ed chain head)   |           51|           62|            6|           51|                  0|            5|            0|            0|
+|Unreclaimable1-2 (Root is a +1~ed wrapper)      |           23|        10692|          146|           63|               1212|         9077|          194|            0|
+|Unreclaimable1-3 (Root is a +1~ed no-wrapper)   |            0|            0|            0|            0|                  0|            0|            0|            0|
+|Unreclaimable2 (Root becomes +0)                |           12|           85|           18|            2|                  2|           52|           11|           13|
+|Unreclaimable2-1 (Tree has any +2~ed chain head)|            1|           37|            1|            2|                  0|           34|            0|            6|
+|Unreclaimable2-2 (Tree has any +1~ed wrapper)   |            1|           10|            1|            0|                  2|            6|            1|            1|
+|Unreclaimable2-3 (Tree has any +1~ed no-wrapper)|           11|           48|           17|            0|                  2|           18|           11|            7|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+
+[gmail_walk] ReclaimedTrees=106, ReclaimedNodes=1868, WastefullyDerefedChainHeads=14017, LifetimeOwnerTraversal=2979
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|                                                |        Trees|        Nodes|ChainHeads(R)|ChainHeads(U)|OrdinaryWrappers(U)|NoWrappers(R)|NoWrappers(U)|LifetimeOwner|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|Reclaimable (Ignored double-counted 23 trees)   |          106|         1868|          122|            0|                  0|         1746|            0|            0|
+|Unreclaimable1 (Root keeps +1)                  |          636|       119696|         2575|         1228|               7306|       108251|          336|            0|
+|Unreclaimable1-1 (Root is a +2~ed chain head)   |          560|          839|          160|          560|                  0|          119|            0|            0|
+|Unreclaimable1-2 (Root is a +1~ed wrapper)      |           76|       118857|         2415|          668|               7306|       108132|          336|            0|
+|Unreclaimable1-3 (Root is a +1~ed no-wrapper)   |            0|            0|            0|            0|                  0|            0|            0|            0|
+|Unreclaimable2 (Root becomes +0)                |           50|        11083|         1598|          193|                305|         8964|           23|         1480|
+|Unreclaimable2-1 (Tree has any +2~ed chain head)|           32|        10876|         1561|          193|                292|         8820|           10|         1465|
+|Unreclaimable2-2 (Tree has any +1~ed wrapper)   |           12|         7069|         1358|           61|                305|         5334|           11|           16|
+|Unreclaimable2-3 (Tree has any +1~ed no-wrapper)|           17|         6456|         1267|           58|                284|         4824|           23|           18|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+
+[twitter] ReclaimedTrees=138, ReclaimedNodes=168, WastefullyDerefedChainHeads=5845, LifetimeOwnerTraversal=57
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|                                                |        Trees|        Nodes|ChainHeads(R)|ChainHeads(U)|OrdinaryWrappers(U)|NoWrappers(R)|NoWrappers(U)|LifetimeOwner|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|Reclaimable (Ignored double-counted 128 trees)  |          138|          168|          144|            0|                  0|           24|            0|            0|
+|Unreclaimable1 (Root keeps +1)                  |          371|        19319|         1676|         1002|                812|        15736|           93|            0|
+|Unreclaimable1-1 (Root is a +2~ed chain head)   |          333|          366|            2|          335|                  0|           29|            0|            0|
+|Unreclaimable1-2 (Root is a +1~ed wrapper)      |           38|        18953|         1674|          667|                812|        15707|           93|            0|
+|Unreclaimable1-3 (Root is a +1~ed no-wrapper)   |            0|            0|            0|            0|                  0|            0|            0|            0|
+|Unreclaimable2 (Root becomes +0)                |           39|          568|          133|           39|                  6|          388|            2|           28|
+|Unreclaimable2-1 (Tree has any +2~ed chain head)|           36|          433|           88|           39|                  0|          306|            0|           22|
+|Unreclaimable2-2 (Tree has any +1~ed wrapper)   |            2|          133|           44|            0|                  6|           82|            1|            5|
+|Unreclaimable2-3 (Tree has any +1~ed no-wrapper)|            2|           12|            2|            0|                  2|            6|            2|            2|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+
+[twitter_walk] ReclaimedTrees=582, ReclaimedNodes=760, WastefullyDerefedChainHeads=21365, LifetimeOwnerTraversal=622
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|                                                |        Trees|        Nodes|ChainHeads(R)|ChainHeads(U)|OrdinaryWrappers(U)|NoWrappers(R)|NoWrappers(U)|LifetimeOwner|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|Reclaimable (Ignored double-counted 183 trees)  |          582|          760|          624|            0|                  0|          136|            0|            0|
+|Unreclaimable1 (Root keeps +1)                  |         2407|       147045|         3642|         5881|               6433|       130764|          325|            0|
+|Unreclaimable1-1 (Root is a +2~ed chain head)   |         2270|        18830|           44|         2419|                  6|        16361|            0|            0|
+|Unreclaimable1-2 (Root is a +1~ed wrapper)      |          137|       128215|         3598|         3462|               6427|       114403|          325|            0|
+|Unreclaimable1-3 (Root is a +1~ed no-wrapper)   |            0|            0|            0|            0|                  0|            0|            0|            0|
+|Unreclaimable2 (Root becomes +0)                |          373|         3138|          474|          371|                  6|         2275|           12|          310|
+|Unreclaimable2-1 (Tree has any +2~ed chain head)|          362|         2987|          421|          371|                  0|         2193|            2|          297|
+|Unreclaimable2-2 (Tree has any +1~ed wrapper)   |            2|          133|           44|            0|                  6|           82|            1|            5|
+|Unreclaimable2-3 (Tree has any +1~ed no-wrapper)|           12|           76|           12|            2|                  2|           48|           12|           10|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+
+[facebook] ReclaimedTrees=84, ReclaimedNodes=172, WastefullyDerefedChainHeads=508, LifetimeOwnerTraversal=3
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|                                                |        Trees|        Nodes|ChainHeads(R)|ChainHeads(U)|OrdinaryWrappers(U)|NoWrappers(R)|NoWrappers(U)|LifetimeOwner|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|Reclaimable (Ignored double-counted 28 trees)   |           84|          172|           99|            0|                  0|           73|            0|            0|
+|Unreclaimable1 (Root keeps +1)                  |           58|        10325|          101|          102|                583|         9361|          178|            0|
+|Unreclaimable1-1 (Root is a +2~ed chain head)   |           51|          403|            0|           51|                 47|          271|           34|            0|
+|Unreclaimable1-2 (Root is a +1~ed wrapper)      |            7|         9922|          101|           51|                536|         9090|          144|            0|
+|Unreclaimable1-3 (Root is a +1~ed no-wrapper)   |            0|            0|            0|            0|                  0|            0|            0|            0|
+|Unreclaimable2 (Root becomes +0)                |            1|           10|            1|            0|                  2|            6|            1|            1|
+|Unreclaimable2-1 (Tree has any +2~ed chain head)|            0|            0|            0|            0|                  0|            0|            0|            0|
+|Unreclaimable2-2 (Tree has any +1~ed wrapper)   |            1|           10|            1|            0|                  2|            6|            1|            1|
+|Unreclaimable2-3 (Tree has any +1~ed no-wrapper)|            1|           10|            1|            0|                  2|            6|            1|            1|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+
+[facebook_walk] ReclaimedTrees=2861, ReclaimedNodes=3281, WastefullyDerefedChainHeads=17848, LifetimeOwnerTraversal=580
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|                                                |        Trees|        Nodes|ChainHeads(R)|ChainHeads(U)|OrdinaryWrappers(U)|NoWrappers(R)|NoWrappers(U)|LifetimeOwner|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+|Reclaimable (Ignored double-counted 306 trees)  |         2861|         3281|         2973|            0|                  0|          308|            0|            0|
+|Unreclaimable1 (Root keeps +1)                  |          746|        54887|         2629|         1575|               6739|        43389|          555|            0|
+|Unreclaimable1-1 (Root is a +2~ed chain head)   |          652|        10575|         1290|          890|                666|         7524|          205|            0|
+|Unreclaimable1-2 (Root is a +1~ed wrapper)      |           94|        44312|         1339|          685|               6073|        35865|          350|            0|
+|Unreclaimable1-3 (Root is a +1~ed no-wrapper)   |            0|            0|            0|            0|                  0|            0|            0|            0|
+|Unreclaimable2 (Root becomes +0)                |           61|        14146|         1240|          491|               1191|        11176|           48|          201|
+|Unreclaimable2-1 (Tree has any +2~ed chain head)|            8|        13898|         1164|          491|               1162|        11059|           22|          103|
+|Unreclaimable2-2 (Tree has any +1~ed wrapper)   |           36|        14046|         1215|          491|               1191|        11126|           23|          177|
+|Unreclaimable2-3 (Tree has any +1~ed no-wrapper)|           32|        12291|          980|          395|               1067|         9801|           48|           99|
++------------------------------------------------+-------------+-------------+-------------+-------------+-------------------+-------------+-------------+-------------+
+

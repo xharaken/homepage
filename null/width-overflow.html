@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+    margin : 0;
+}
+
+div {
+    margin : auto;
+    width : 960px;
+}
+</style>
+</head>
+
+<body>
+<div id="result">
+</div>
+<script>
+if (window.layoutTestController)
+    layoutTestController.setPrinting();
+
+var testCases = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+var result = "";
+for (var i = 0; i < testCases.length; i++) {
+    result += "<p>";
+    for (var j = 0; j < 200; j++) {
+        result += testCases[i] + " ";
+    }
+    result += "</p>\n";
+}
+document.getElementById("result").innerHTML = result;
+</script>
+</body>
+</html>

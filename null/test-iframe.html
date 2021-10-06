@@ -1,0 +1,12 @@
+<body>
+<div id="console">
+<script>
+function log(str) {
+    document.getElementById("console").innerHTML += str + "\n";
+}
+
+log(window.frameElement);
+log(window.frameElement.ownerDocument);
+log(window.frameElement.ownerDocument.getElementById("id"));
+</script>
+</body>

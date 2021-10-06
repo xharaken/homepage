@@ -1,0 +1,644 @@
+\documentclass[25pt,landscape,papersize]{jsarticle}
+\usepackage{/home/haraken/tex/style/slide}
+\title{\Large DMI：計算資源の動的な参加/脱退をサポート\\
+  する大規模分散共有メモリインタフェース}
+\subtitle{Distributed Memory Interface}
+\author{原健太朗, 田浦健次朗, 近山隆（東京大学）}
+\def\year{2009}
+\def\month{8}
+\def\day{6}
+\date{\mytoday}
+
+\begin{document}
+
+\maketitle
+
+\subsection{発表の流れ}
+
+\begin{enumerate}
+\item 序論
+\item システムデザイン
+\item 関連研究
+\item \red{参加/脱退対応のプロトコル}
+\item 性能評価
+\item 結論
+\end{enumerate}
+
+\section{序論}
+
+\subsection{背景}
+
+\begin{itemize}
+\item 並列分散コンピューティングの発展
+  \begin{itemize}
+  \item 産業界の応用分野での並列分散アプリの多様化・高度化
+  \item 計算資源の大規模化・高性能化
+  \end{itemize}
+\item 基盤となる並列分散処理系への要請も多様化
+  \begin{itemize}
+  \item \red{計算資源の動的な参加/脱退のサポート}
+  \item 複雑なネットワーク構成への対応
+  \item 耐故障
+  \item ...
+  \end{itemize}
+\end{itemize}
+
+\subsection{計算資源の動的な参加/脱退のサポート(1)}
+
+\begin{itemize}
+\item 現状：計算資源は個人のものではない
+  \begin{itemize}
+  \item クラスタの運用ポリシー，課金制度，...
+  \end{itemize}
+\item 要請：
+  \begin{itemize}
+  \item 参加/脱退を越えて1つの並列計算を継続実行
+  \item 計算環境の動的マイグレーション
+  \end{itemize}
+\end{itemize}
+
+\fig{0.33}{slide_migration.eps}
+
+\subsection{計算資源の動的な参加/脱退のサポート(2)}
+
+\begin{itemize}
+\item 例：クライアント・サーバ方式
+  \begin{itemize}
+  \item 特定の計算資源に負荷が集中するためスケーラブルでない
+  \item 計算資源どうしが疎に結び付くモデルの上で効率的に実行可能な処理は限られる[Taura,2001]
+  \end{itemize}
+\item \red{多数の計算資源がもっと密に協調}するアプリもサポートできる処理系が必要
+\end{itemize}
+
+\fig{0.42}{slide_density.eps}
+
+\subsection{並列分散プログラミングモデル}
+
+\begin{itemize}
+\item どのプログラミングモデルをベースにすべきか?
+\end{itemize}
+
+\fig{0.4}{slide_programming.eps}
+
+\subsection{メッセージパッシング}
+
+\begin{itemize}
+\item 一意的なランクを使用したデータの送受信(send/recv)を明示的に記述
+\item \red{データの所在管理はユーザプログラム側に任される}
+  \begin{itemize}
+  \item ユーザプログラム側が「系内に誰がいて誰がどのデータを持っているのか」を把握する必要あり
+  \item 参加/脱退時の\red{記述は相当に複雑化}
+  \end{itemize}
+\end{itemize}
+\up{7}
+\fig{0.38}{slide_mp.eps}
+
+\subsection{分散共有メモリ}
+
+\begin{itemize}
+\item データの送受信(send/recv)を隠蔽して，仮想的な共有メモリへのアクセス(read/write)に抽象化
+\item \red{データの所在管理が処理系側で行われる}
+  \begin{itemize}
+  \item ユーザプログラム側では「誰がどのデータを持っているか」はおろか
+    「系内に誰がいるか」さえ把握する必要なし
+  \item 参加/脱退に伴うユーザプログラムの\red{記述が容易}
+  \end{itemize}
+\end{itemize}
+
+\fig{0.45}{slide_dsm.eps}
+
+\subsection{本研究の提案}
+
+\begin{itemize}
+\item DMI：Distributed Memory Interface
+  \begin{itemize}
+  \item \red{分散共有メモリをベースとして，
+      多数の計算資源が密に協調するアプリ領域に対しても，
+      計算資源の参加/脱退をサポートする並列分散ミドルウェア基盤}
+  \item 独自のコンセプトに基づき，分散共有メモリとしての\red{機能と性能を追求}
+  \end{itemize}
+\end{itemize}
+
+\section{システムデザイン}
+
+\subsection{4大コンセプト}
+
+\begin{itemize}
+\item 機能的要件
+  \begin{itemize}
+  \item 【1】\red{動的な参加/脱退のサポート}
+  \item 【2】\red{遠隔スワップシステム}
+  \item 【3】\red{スレッドプログラミングとの対応性}
+  \end{itemize}
+\item 性能的要件
+  \begin{itemize}
+  \item 【4】\red{細粒度で明示的な最適化手段}
+    \begin{itemize}
+    \item 分散共有メモリにとって潜在的な性能の鈍さを補う
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\subsection{【1】動的な参加/脱退のサポート(1)}
+
+\begin{itemize}
+\item 動的な参加/脱退に対応可能な\red{コンシステンシプロトコルを定義}
+  \begin{itemize}
+  \item 後述
+  \end{itemize}
+\end{itemize}
+
+\fig{0.5}{slide_concept1.eps}
+
+\subsection{【1】動的な参加/脱退のサポート(2)}
+
+\begin{itemize}
+\item 従来の分散共有メモリ：SPMD型のスタイル
+  \begin{itemize}
+  \item 「全員」の時系列的な挙動が明確な定型的処理に特化
+  \item 「全員」の概念があると容易に参加/脱退を記述できない
+  \end{itemize}
+\item DMI：\red{pthread型}のスタイル
+  \begin{itemize}
+  \item プログラム記述に際して「全員」の概念が不要
+  \item 動的なスレッド生成/破棄を通じて，
+    参加/脱退に伴う\red{動的な並列度変化を容易に記述可能}
+  \end{itemize}
+\end{itemize}
+
+\subsection{【1】動的な参加/脱退のサポート(3)}
+
+\begin{itemize}
+\item 便利なAPI：
+  \begin{itemize}
+  \item 参加中のノードを取得するAPI
+  \item ノードの参加/脱退イベントをポーリングするAPI
+  \item 参加ノードの総コア数が目標値になるまで待機するAPI
+  \item ...
+  \end{itemize}
+\end{itemize}
+
+\subsection{【2】遠隔スワップシステム(1)}
+
+\begin{itemize}
+\item 並列実行環境$+$\red{遠隔スワップシステム}
+\end{itemize}
+
+\fig{0.5}{slide_concept3.eps}
+
+\subsection{【2】遠隔スワップシステム(2)}
+
+\fig{0.4}{slide_model.eps}
+
+\begin{itemize}
+\item 各ノードのDMI物理メモリを集めてDMI仮想共有メモリを構築
+\item 各ユーザスレッドは全ノードのDMI物理メモリに透過的にアクセス可能
+\item 複数ユーザスレッドがDMI物理メモリを「共有キャッシュ」的に利用
+  \begin{itemize}
+  \item \red{マルチコアレベルの並列性}も有効活用
+  \end{itemize}
+\item \red{ページ置換}
+\end{itemize}
+
+\subsection{【3】スレッドプログラミングとの対応性(1)}
+
+\begin{itemize}
+\item pthreadプログラムに対して\red{ほぼ機械的な思考に基づく変換作業}だけでDMIのプログラムが得られるようなAPI
+  \begin{itemize}
+  \item create, join, detach
+  \item mutex
+  \item cond
+  \end{itemize}
+\end{itemize}
+
+\fig{0.4}{slide_concept2.eps}
+
+\subsection{【3】スレッドプログラミングとの対応性(2)}
+
+\begin{itemize}
+\item 従来の分散共有メモリ：token[Naimi et al,1996]やロックマネージャを利用してmutexやcondを実装
+\item DMI：\red{read/write/fetch-and-store/compare-and-swapを基盤}としてmutexやcondを実装
+\end{itemize}
+\up{14}
+\fig{0.38}{slide_sync1.eps}
+\up{10}
+\begin{itemize}
+\item 実装上の利点：コンシステンシ管理の対象が仮想共有メモリだけで済む
+\end{itemize}
+
+\subsection{【3】スレッドプログラミングとの対応性(3)}
+
+\begin{itemize}
+\item 機能上の利点：共有メモリ環境の同期の階層関係を忠実に反映
+  \begin{itemize}
+  \item 「mutexよりread-modify-writeの方が軽い」
+  \item 共有メモリ環境上の効率的なアルゴリズムをサポート
+    \begin{itemize}
+    \item 例：wait-freeなデータ構造
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+\fig{0.36}{slide_sync2.eps}
+
+\subsection{【4】細粒度で明示的な最適化手段(1)}
+
+\begin{itemize}
+\item (OSのメモリ保護機構に頼ることなく)\red{ユーザレベルで}コンシステンシ管理
+  \begin{itemize}
+  \item 「ページ」単位でSequential Consistensyを保証
+  \end{itemize}
+\item アプリの挙動に合致した\red{任意のページサイズ}でメモリ確保
+  \begin{itemize}
+  \item OSの4KB単位のメモリ保護機構を利用するよりもページフォルト回数を大幅に削減
+  \item 例：行列丸ごと1個を1ページに指定
+  \end{itemize}
+\end{itemize}
+
+\subsection{【4】細粒度で明示的な最適化手段(2)}
+
+\begin{itemize}
+\item \red{関数呼び出し型}のread/write
+  \begin{itemize}
+  \item DMI\_read(...)，DMI\_write(...)
+  \item 「どうread/writeしたいのか」を関数の引数として指定可能
+    \begin{itemize}
+    \item マルチモードread/write：データの物理的な所在に関する最適化
+    \item 非同期read/write：通信時間隠蔽に関する最適化
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\subsection{【4】細粒度で明示的な最適化手段(3)}
+
+\begin{itemize}
+\item \red{マルチモードread}：
+  \begin{itemize}
+  \item READ\_ONCE：今の1回だけ読めればいい
+  \item READ\_INVALIDATE：今読んだものはキャッシュしておきたいが，
+    更新時にはキャッシュが無効化されてもいい
+  \item READ\_UPDATE：今読んだものをキャッシュするとともに，キャッシュをずっと最新に保ちたい
+  \end{itemize}
+\item \red{update型とinvalidate型をどうハイブリッドさせるか}を\red{readの粒度で}明示的に指定可能
+\end{itemize}
+
+\fig{0.31}{slide_multiread.eps}
+
+\subsection{【4】細粒度で明示的な最適化手段(4)}
+
+\begin{itemize}
+\item \red{マルチモードwrite}：
+  \begin{itemize}
+  \item WRITE\_REMOTE：データの書き込みをオーナーに行わせる
+    \hskip10pt\fig{0.36}{slide_multiwrite1.eps}
+  \item WRITE\_LOCAL：オーナー権を奪った後で自分でデータを書き込む
+    \hskip10pt\fig{0.36}{slide_multiwrite2.eps}
+  \end{itemize}
+\end{itemize}
+
+\subsection{【4】細粒度で明示的な最適化手段(5)}
+
+\begin{itemize}
+\item read/writeの\red{非同期}版
+  \begin{itemize}
+  \item 計算と通信のオーバーラップ
+  \item プリフェッチ
+  \end{itemize}
+\end{itemize}
+
+\section{関連研究}
+
+\subsection{関連研究(1)}
+
+\begin{itemize}
+\item Phoenix[Taura at el,2003]：
+  \begin{itemize}
+  \item メッセージパッシングベースで動的な参加/脱退に対応
+  \item ユーザプログラム側では物理的なノード名とは別の「仮想ノード名」を用いて通信を記述
+  \end{itemize}
+\item プログラム記述は複雑
+\end{itemize}
+
+\fig{0.38}{slide_phoenix.eps}
+
+\subsection{関連研究(2)}
+
+\begin{itemize}
+\item DSM-Threads[Muller,1997]：
+  \begin{itemize}
+  \item 分散共有メモリベースでpthreadを分散拡張
+    \begin{itemize}
+    \item pthreadとの対応性を重視
+    \end{itemize}
+  \item データの表現形式やアラインメントに関してヘテロな環境に対応
+  \item tokenを用いた効率的な優先度付き排他制御
+  \end{itemize}
+\item 動的な\red{参加/脱退には未対応}
+\end{itemize}
+
+\subsection{関連研究(3)}
+
+\begin{itemize}
+\item Teramem[Yamamoto et al,2009]：
+  \begin{itemize}
+  \item 逐次処理のための遠隔スワップシステム
+  \item カーネルモジュールとして実装
+  \item MMUの情報を利用した疑似LRU
+  \item 複数ページをまとめた遠隔スワップによるバンド幅を有効活用
+  \item Myrinet 10G環境で，GNU sortがHDDアクセスより40倍以上高速
+  \end{itemize}
+\item 並列実行環境は提供されず，動的な\red{参加/脱退にも未対応}
+\end{itemize}
+
+\section{参加/脱退対応のプロトコル}
+
+\subsection{設計すべきプロトコルの概観(1)}
+
+\begin{itemize}
+\item メタ情報を管理するオーナーが各ページごとに1個存在
+\item 動的環境下では固定的なノードを設置できないため\red{オーナーは動的に変化}
+\item 基本的な挙動：要求メッセージをオーナーに通知し，
+  Sequential Consistency維持を行い，応答メッセージを返す
+\end{itemize}
+
+\fig{0.44}{slide_protocol.eps}
+
+\subsection{設計すべきプロトコルの概観(2)}
+
+\begin{itemize}
+\item (マルチモードreadに対応するため)ページが取りうる3状態：
+  \begin{itemize}
+  \item INVALID：無効
+  \item DOWN\_VALID：有効だが，次回の更新時に無効化される
+  \item UP\_VALID：有効で，今後も最新状態に保たれる
+  \end{itemize}
+\end{itemize}
+\up{12}
+\fig{0.5}{slide_pagestate.eps}
+
+\subsection{設計すべきプロトコルの概観(3)}
+
+\begin{itemize}
+\item 定義すべきプロトコル：
+  \begin{itemize}
+  \item readフォルト
+    \begin{itemize}
+    \item READ\_ONCE
+    \item READ\_INVALIDATE
+    \item READ\_UPDATE
+    \end{itemize}
+  \item writeフォルト
+    \begin{itemize}
+    \item WRITE\_LOCAL
+    \item WRITE\_REMOTE
+    \end{itemize}
+  \item (ページ置換と脱退にとって必要な)\red{ページの追い出し}
+    \begin{itemize}
+    \item 自分がオーナーである場合
+    \item 自分がオーナーでない場合
+    \end{itemize}
+  \end{itemize}
+\item 多様で複雑！
+\end{itemize}
+
+\anime{1}{3}{
+  \subsection{失敗例：プロトコル設計の難しさの確認\animenumber}
+  \fig{0.55}{slide_fail\animecounter.eps}
+}
+
+\subsection{失敗例：プロトコル設計の難しさの確認(4)}
+
+\fig{0.55}{slide_fail4.eps}
+
+
+\begin{itemize}
+\item オーナーが動的に変化する状況でのプロトコル設計は難解！
+\item どうすれば複雑なプロトコルを設計できるか?
+\end{itemize}
+
+\subsection{観察：オーナーが固定されている場合}
+
+\begin{itemize}
+\item クライアント・サーバ方式
+\item どんなに複雑なプロトコル設計も自明
+  \begin{itemize}
+  \item 理由：各ノードの状態変化を\red{オーナーの意図通り}に行えるから
+    \begin{enumerate}
+    \item 各ノードからオーナーへの通信路が存在
+    \item オーナーから各ノードへのFIFOな通信路が存在
+    \item オーナーからのメッセージを受信した時点でしか各ノードの状態変化が引き起こされない
+    \end{enumerate}
+  \end{itemize}
+\end{itemize}
+
+\fig{0.5}{slide_cserver.eps}
+
+\subsection{オーナーが変化する場合のプロトコル設計規約}
+
+\begin{itemize}
+\item ということは，オーナーが動的に変化したとしても，
+  以下の3条件さえ保証すれば，あたかもオーナー固定であるかのように複雑なプロトコルを容易に設計可能
+  \begin{itemize}
+  \item 条件\I ：\red{各ノードからオーナーへの通信路が存在}
+  \item 条件\II ：\red{オーナーの遷移に関係なくオーナーから各ノードへのFIFOな通信路が存在}
+  \item 条件\III ：\red{各ノードの変数はオーナーからのメッセージを受信した時点でしか更新されない}
+  \end{itemize}
+\end{itemize}
+
+\fig{0.6}{slide_rule.eps}
+
+\subsection{条件\II の実現法：メッセージの順序制御}
+
+\begin{itemize}
+\item オーナーから各ノードへのメッセージに順序番号を付与し，
+  \red{各ノードでメッセージを順序制御}
+\end{itemize}
+
+\fig{0.45}{slide_ordering.eps}
+
+\subsection{条件\I の実現法：オーナー追跡グラフ}
+
+\begin{itemize}
+\item \red{オーナー追跡グラフ}[Li et al,1989]
+  \begin{itemize}
+  \item 各ノードが変数probableを保持
+    \begin{itemize}
+    \item probable=「たぶんこのノードがオーナー」
+    \end{itemize}
+  \item 全ノードを通じたprobableの参照関係がオーナーに収束するグラフになるように管理
+  \item オーナー宛の要求メッセージは各ノードでフォワーディングすることで，やがてオーナーに到達可能
+  \end{itemize}
+\item 各ノードのprobableをどう管理すればよいか?
+  \begin{itemize}
+  \item 条件\III の必要性
+  \end{itemize}
+\end{itemize}
+\up{16}
+\fig{0.4}{slide_owner.eps}
+
+\subsection{条件\III の必要性}
+
+\begin{itemize}
+\item 条件\III ：(probableなどの)各ノード上の変数は，
+  オーナーからの順序制御されたメッセージを受信した時点でしか更新しない
+\end{itemize}
+
+\fig{0.38}{slide_update.eps}
+
+\anime{1}{7}{
+  \subsection{失敗例：条件\III の必要性の確認\animenumber}
+  
+  \fig{0.55}{slide_failowner\animecounter.eps}
+}
+
+\subsection{プロトコルの設計規約のまとめ}
+
+\fig{0.65}{slide_rule2.eps}
+
+\begin{itemize}
+\item この設計規約を守れば，\red{クライアント・サーバ方式のイメージで多様で複雑なプロトコルを容易に設計}可能
+\end{itemize}
+
+\anime{1}{5}{
+  \subsection{具体例：writeフォルト[WRITE\_LOCAL]\animenumber}
+  
+  \fig{0.5}{slide_lwritefault\animecounter.eps}
+}
+
+\subsection{ノードの参加}
+
+\fig{0.36}{slide_join.eps}
+
+\subsection{ノードの脱退}
+
+\fig{0.36}{slide_leave.eps}
+
+\section{性能評価}
+
+\begin{itemize}
+\item 一部のAPIや機能は未実装
+\end{itemize}
+
+\subsection{実験：二分探索木への並列なデータの挿入/削除}
+
+\begin{itemize}
+\item 実験：二分探索木に対して，動的に参加/脱退する多数のノードが適切な排他制御を行いながらデータを挿入/削除
+  \begin{itemize}
+  \item 動的で複雑なグラフ構造を扱う処理
+  \end{itemize}
+\item 種別：共有メモリベースだからこそ記述できるアプリ
+\end{itemize}
+
+\fig{0.43}{slide_bintree.eps}
+
+\subsection{結果：二分探索木への並列なデータの挿入/削除}
+
+\begin{itemize}
+\item 結果：
+  \begin{itemize}
+  \item 22ノード88スレッドを動的に参加/脱退させても，
+    二分探索木の中身が正しくソートされた状態で計算が継続
+  \item pthreadプログラムに対する機械的な思考に基づく変換作業でDMIのプログラムが得られた
+    \begin{itemize}
+    \item pthread：663行，DMI：759行
+    \end{itemize}
+  \end{itemize}
+\item \red{従来の処理系では動的な参加/脱退をサポートできなかったような，
+    多数の計算資源が密に協調するアプリ領域に対しても，DMIのアプローチが適用できる可能性}を示唆
+\end{itemize}
+
+\subsection{実験：マンデルブロ集合の並列描画}
+
+\begin{itemize}
+\item 実験：$z_0=0,z_{n+1}=z_n^2+c$なる複素数列$\{z_n\}$が$n\to\infty$で発散しない$c$の範囲を並列描画
+  \begin{itemize}
+  \item 480$\times$480の描画領域を横に480分割したマスタ・ワーカ方式で記述
+  \end{itemize}
+\item 種別：Embarrassingly Parallelなアプリ
+\end{itemize}
+
+\fig{0.32}{slide_mandel.eps}
+
+\subsection{結果：マンデルブロ集合の並列描画}
+
+\begin{itemize}
+\item 結果：
+  \begin{itemize}
+  \item \red{32プロセッサ}程度まではMPI並にスケール
+  \item 128プロセッサ時の並列度は，MPIが115，DMIが66
+  \end{itemize}
+\end{itemize}
+
+\fig{0.6}{slide_mandel2.eps}
+
+\subsection{実験：遠隔スワップを利用した連続アクセス}
+
+\begin{itemize}
+\item 実験：連続アクセスに関して，1GbE環境でのDMI\_read()/非同期DMI\_read()とHDDアクセスを性能比較
+  \begin{itemize}
+  \item DMI\_read()：
+    \begin{itemize}
+    \item ページサイズ100MBのページ160個を20ノード上に分散確保
+    \item 各ノードの使用メモリ量上限を4GBに設定
+    \item ノード0で16GBを連続アクセス
+    \end{itemize}
+  \item HDD：16GBのファイルを連続アクセス
+  \end{itemize}
+\end{itemize}
+
+\fig{0.5}{slide_seqread.eps}
+
+\subsection{結果：遠隔スワップを利用した連続アクセス}
+
+\begin{itemize}
+\item 結果：
+  \begin{itemize}
+  \item DMI\_read()はHDDアクセスの\red{1.9倍高速}
+  \item 非同期DMI\_read()はHDDアクセスの\red{2.4倍高速}
+  \end{itemize}
+\end{itemize}
+
+\fig{0.5}{slide_seqread2.eps}
+
+
+\section{結論}
+
+\subsection{まとめ}
+
+\begin{itemize}
+\item DMIの特徴：
+  \begin{enumerate}
+  \item \red{動的な参加/脱退に対応するコンシステンシプロトコル}を新たに開発
+  \item 参加/脱退に伴う動的な並列度変化を\red{pthread型のスタイル}によって容易に記述可能
+  \item \red{スレッドプログラミングと対応}するAPIや同期機構
+  \item 並列実行環境$+$\red{遠隔スワップシステム}
+  \item \red{細粒度で明示的な最適化手段}
+  \end{enumerate}
+\item \red{従来の処理系では動的な参加/脱退をサポートできなかったような，
+    多数の計算資源が密に協調するアプリに対しても，
+    DMIのアプローチを適用できる可能性}
+\end{itemize}
+
+\subsection{今後の課題}
+
+\begin{itemize}
+\item 一部の未実装機能を実装
+\item 緻密な性能評価
+  \begin{itemize}
+  \item 特に遠隔スワップシステム
+  \end{itemize}
+\item プロトコルの再検討
+  \begin{itemize}
+  \item 今のプロトコルは各ノードが「システム全体」の知識を持っていることが前提
+    \begin{itemize}
+    \item 本当に参加/脱退が重要になるような大規模な計算環境に対応できない
+    \end{itemize}
+  \item 各ノードがもっと\red{「局所的」な知識}に基づいて動作するように改善
+  \end{itemize}
+\end{itemize}
+
+\thankyou
+
+\up{-20}
+{\Huge\textbf{Are there any questions?}}
+
+\end{document}

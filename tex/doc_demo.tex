@@ -1,0 +1,3438 @@
+\documentclass[report,12pt]{jsbook}
+\usepackage{/home/haraken/tex/style/book}
+\title{DMI ドキュメント（執筆途中）\\\vspace*{20pt}
+  {\Large \textit{A Global Address Space Framework}\\
+    \textit{for Elastic and High-performance Parallel Computations}}}
+\author{原健太朗\\\vspace*{20pt}
+  http://haraken.info/}
+\date{\mytoday}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\chapter{DMIについて}
+
+\section{DMIとは何か}
+
+\subsection{超要約}
+
+\textbf{DMI（Distributed Memory Interface）}は，
+\textbf{クラウドコンピューティングの世界において高性能並列計算を簡単に記述できるようにすることを目指した並列分散プログラミング処理系}です．
+「クラウドコンピューティング」というバズワードを使わずに表現するならば，
+DMIでは，\figref{sec:}のように，
+\textbf{並列計算を実行中に利用できる計算資源数が動的に増減するような環境において，
+計算規模を動的に拡張/縮小しながら動作するような高性能並列計算を簡単に記述する}ことができます．
+
+\subsection{長期的な目標}
+
+では，詳しく説明していきます．
+クラウドコンピューティングでは，クラウドプロバイダと呼ばれる組織が大規模なデータセンタを構築し，
+インフラストラクチャ，プラットフォーム，ソフトウェアなどを整備して，それらをサービスとして利用者に提供します．
+そして，利用者は，それらのサービスを必要なときに必要な量だけ利用することができ，実際に利用した量だけの課金がなされます．
+したがって，従来ならば，企業や大学が何らか大規模な計算を行うためには，
+必要な計算規模を予測したうえで自前でデータセンタを構築して管理する必要があったのに対して，
+クラウドコンピューティングでは，面倒なデータセンタの構築や管理の手間をすべてクラウドプロバイダに任せられるうえ，
+必要なときに必要なだけの計算規模を利用できるため，多くの場合にはコストパフォーマンスが良くなります．
+つまり，クラウドコンピューティングは，計算環境を「所有」する従来の形態を，計算環境を「利用」する形態へとパラダイムシフトさせたわけです．
+
+クラウドコンピューティングにはさまざまな目的や形態が存在しますが，
+DMIは特に，クラウドコンピューティングの世界で高性能並列計算を効率良く実行できるような
+プラットフォームをどう実現するか，という問題に着眼しています．
+今述べたように，クラウドコンピューティングの世界では，
+利用者側の視点で見れば，何か1個の大規模なデータセンタとその上で動く
+並列計算用プラットフォームがあってそれを必要なときに必要なだけ利用できるわけですが，
+これをクラウドプロバイダ側の視点で見ると，データセンタを利用している利用者が多数いて，
+多数の利用者が好き勝手に要求してくる並列計算を，有限の計算資源をうまくやり繰りしながら効率良く処理していくことが必要になります．
+さて，ここで有限の計算資源をうまくやり繰りしながら効率良く並列計算を実行するにはどうすれば良いかを考えてみます．
+たとえば，ある時点で利用者Aが並列計算を要求してきたときに，
+データセンタを利用している利用者は他には誰もいなかったとします．
+このときは，\figref{fig:}に示すように，データセンタに存在する計算資源をフルに使って利用者Aの並列計算を実行するのが効率的だと考えられます．
+しばらくして，利用者Bも並列計算を要求してきたとします．
+このとき，すでに利用者Aの並列計算がすべての計算資源を使い切ってしまっているため，
+このままでは利用者Bの並列計算を実行することができません．
+このような場合には，\figref{fig:}に示すように，すでに長時間実行している利用者Aの並列計算の規模を縮小して，
+空いた分の計算資源に利用者Bの並列計算を割り当てることが効率的だと考えられます．
+当然，複数の利用者による並列計算の要求をどのようにスケジューリングするかは運用ポリシにも依存する難しい問題ですが，
+少なくとも，データセンタの中の計算資源が有限である限り，並列計算を実行中にその並列計算の計算規模を動的に拡張/縮小させる必要が出てきます．
+
+ところが，少し想像すればわかるように，
+実行途中で計算規模が拡張/縮小するような並列計算のプログラムを記述するのは，到底容易なことではありません．
+実際に，MPI\footnote{}，
+UPC\footnote{}，
+Global Arrays\footnote{}，
+Titanium\footnote{}など，高性能並列計算のための並列分散プログラミング処理系は多数開発されていますが，
+並列計算の計算資源を動的に拡張/縮小させることができる処理系はほとんど存在しません．
+Phoenix\footnote{}
+というメッセージパッシングベースの処理系では，並列計算の計算資源を動的に拡張/縮小させることができますが，
+メッセージパッシングベースであるということもあり，プログラミングは複雑なものになっています．
+
+以上の動機に基づき，DMIでは，グローバルアドレス空間を提供し，
+簡単なread/writeベースのプログラミングによって，
+計算規模が動的に拡張/縮小するような高性能並列計算を簡単に記述できることを目標としています．
+
+\subsection{さしあたっての目標}
+
+このように，DMIでは，クラウドコンピューティングの世界で高性能並列計算を効率良く実行できるような
+プラットフォームを実現することを長期的な視野として目標にしています．
+しかし，実際にクラウドコンピューティングとしてのプラットフォームを作り上げるには，
+ユーザインタフェース，セキュリティ，SLAなどあまりに多様な要素を考慮する必要があり，実用的に運用可能なシステムまで作り込むのは非常に困難です．
+そこで，DMIでは，さしあたって，1つの均質なクラスタ環境において，
+ノードを動的に参加/脱退させることで計算規模が動的に拡張/縮小するような高性能並列計算を簡単に記述できることを目標にします．
+そのために，DMIでは，
+\begin{itemize}
+\item ノードの動的な参加/脱退を簡単に記述するためのAPI
+\item スレッド生成/回収，グローバルアドレス空間へのメモリ確保/解放，
+  グローバルアドレス空間に対するread/write，排他制御変数や条件変数による同期など，
+  並列計算を記述するうえで必要となる一連のAPI
+\item データの所在を明示的かつ細粒度にコントーロールすることで並列計算の性能を徹底的に最適化するための手段
+\end{itemize}
+などを提供しています．
+また，DMIは計算規模の動的な拡張/縮小を大きなテーマとしていますが，
+当然，実行開始から実行終了まで計算資源数が一定であるような高性能並列計算のためにも利用できます．
+DMIでは，\textbf{計算規模の拡張/縮小にかかわらず，
+グローバルアドレス空間に対するread/writeに基づいた容易なプログラミングと明示的で強力な最適化手段のもとで，
+さまざまな高性能数値計算を見通し良く開発する}ことができます．
+
+
+\section{本ドキュメントについて}
+
+\subsection{本ドキュメントの目的}
+
+本ドキュメントの目的は，はじめてDMIを使う人が，
+効率的なDMIプログラミングを行えるようになるために必要十分な情報をチュートリアル形式で提供することにあります．
+よって，単なる「仕様書」ではなく，DMIのインストール方法，実行方法，DMIプログラミングのルール，
+DMIの各APIの詳細なセマンティクス，DMIプログラムのチューニング方法などを，
+できるだけ論理的に飛躍することなく順を追って解説することを目指しています．
+特に，分散プログミラングにおいては，いかにしてスケーラビリティを高めるかが問題になるため，
+重要な部分についてはDMIの内部的な実装まで話を踏み込んで，DMIプログラムを性能最適化するためのヒントを詳しく解説しています．
+
+しかし，あくまでもこのドキュメントは，プログラマがDMIプログラミングを行うためのドキュメントであるため，
+DMIの処理系の概念，意義，モデル，詳細なアルゴリズムなどDMIの詳細な実装については説明していません．
+それら学術的な内容に関しては，DMIの配布サイトにある各論文をご参照ください．
+
+\subsection{対象とする読者}
+
+おおむね，以下のようなスキルの読者を対象に解説しています：
+
+\begin{itemize}
+\item C言語のプログラミングに十分慣れている．
+\item MPIやUPCなどで並列分散プログラムを少しは書いた経験がある．
+\item pthreadプログラミングや同期に関する知識がある．
+\item Linuxでの日常的なシェル操作ができる．
+\end{itemize}
+
+\subsection{本ドキュメントの構成}
+
+本ドキュメントは以下のように構成されています：
+
+\begin{description}
+\item[第1章 DMIについて] DMIの紹介，インストール方法，実行方法，ライセンスなどメタ的な説明を行います．
+\item[第2章 DMIプログラミングの基礎] 実際のDMIプログラムを提示し，おおよそDMIプログラムがどのように記述できるのかを解説するとともに，
+  DMIプログラミングにおける最も基本的なルールを説明します．
+\item[第3章 プロセスとスレッド] DMIプログラミングにおいて，動的にDMIプロセスを参加/脱退させたりDMIスレッドを生成/回収したりすることで，
+  計算規模を拡張/縮小するための方法を説明します．
+\item[第4章 メモリアクセス] グローバルアドレス空間に対するメモリ確保/解放やさまざまなread/writeの方法を説明するとともに，
+  DMIの内部的な実装にも踏み込み，DMIプログラムの性能を最適化する方法について詳しく説明します．
+\item[第5章 同期] DMIが提供するさまざまな同期の方法について説明します．
+\item[第6章 サンプルプログラム] 典型的なDMIプログラミングのテンプレートを紹介するとともに，
+  dmi-x.x.x.x/test/ディレクトリ以下に入っているサンプルプログラムの概要と実行方法を説明します．
+\item[第7章 API一覧] 以上の各章で断片的に説明してきたAPIを一覧にしてまとめています．
+\end{description}
+
+\section{ライセンス}
+
+本ソフトウェアのライセンスは以下のとおりです：
+
+\begin{itemize}
+\item 本ソフトウェアの著作権は原健太朗にあります．
+\item 現時点でのDMIの最新バージョンは，DMI 1.3.0です．
+\item 本ソフトウェアはGPLライセンスに従います．
+\end{itemize}
+
+\section{お知らせ}
+
+DMIは，クラウディな並列計算を容易に記述できるようにすることを目的として研究開発されています．
+現段階では，実用性よりも研究レベルでの新規性を重視しているため，
+\textbf{現時点で最も「概念的」に美しいソフトウェアにすること}を最重視して開発しています．
+よって，後方互換性は意識しておらず予告なくAPIの変更を行うことがありますがご了承ください．
+
+DMIに関する更新履歴や最新情報は，DMIの配布サイトに掲載しますのでご参照ください．
+
+バグ報告，DMIに関する質問，意見，ドキュメントの誤植報告などは大歓迎です（特にDMIの設計に関する意見は大歓迎です）．
+DMIの配布サイトにある掲示板に書き込むか，もしくは私のメールアドレス：
+\begin{quote}
+  haraken $\heartsuit$ logos.ic.i.u-tokyo.ac.jp ($\heartsuit$の部分を@に置き換えてください)
+\end{quote}
+までメールしていただければ幸いです．
+
+\section{インストール}
+
+\subsection{動作環境}
+
+64ビットのLinux環境で動作します．
+64ビットであることを陽に利用しているため，\textbf{32ビットのLinux環境では安全に動作しません}．
+ソフトウェアとしては，gccコンパイラおよびPerlを必要とします．
+
+DMIの開発では，主に以下の環境を利用して動作確認を行っています：
+
+\begin{itemize}
+\item Intel Xeon E5410（4コア）2.33GHzを2個搭載した8コアマシン16台を1GbitEthernetで接続したクラスタ．
+  OSはカーネル2.6.18-6-amd64のDebian Linux．
+  gccのバージョンは4.1.2．
+\item Intel Xeon 5140（4コア）2.33GHzを1個搭載した4コアマシン22台を1GbitEthernetで接続したクラスタ．
+  OSはカーネル2.6.18-6-amd64のDebian Linux．
+  gccのバージョンは4.1.2．
+\item AMD Opteron 8356（4コア）2.30GHzを4個搭載した16コアマシン8台を，
+  Myrinetおよび1GbitEthernetで接続したクラスタ．
+  OSはカーネル2.6.18-53.1.19.el5のRedHatEnterprise Linux．
+  gccのバージョンは4.1.2．
+\end{itemize}
+
+\subsection{インストール}
+
+インストールの手順を説明します．
+ここではクラスタ環境を想定して，ホームディレクトリはNFSなどのファイル共有システムによってファイル共有されているとし，
+DMIをホームディレクトリ直下の~/dmi/ディレクトリにインストールする場合を例にして説明します．
+なお，ファイル共有されていればインストール作業やDMIプログラムの実行が簡単になりますが，
+DMIの実行にとってファイル共有されていることは必須ではありません．
+ファイル共有されていなくても，DMIがインストールされていてかつDMIプログラムの実行バイナリを保持していれば，
+そのDMIプログラムに基づく並列計算に参加/脱退させることができます．
+
+dmi-x.x.x.x.tar.gzをダウンロードしたディレクトリに移動し，
+以下のコマンドを入力することで，~/dmi/ディレクトリにDMIをインストールすることができます．
+なお，dmi-x.x.x.xの部分はDMIのバージョンに応じて読み替えてください：
+\begin{code}
+$ tar xvf dmi-x.x.x.x.tar.gz
+$ cd dmi-x.x.x.x/
+$ ./configure --prefix=~/dmi/
+$ make
+$ make install
+\end{code}%$
+
+次に，~/dmi/binディレクトリにパスを通すために以下のコマンドを打ちます：
+\begin{code}
+$ export PATH=$PATH:~/dmi/bin
+\end{code}
+これで\texttt{dmicc}，\texttt{dmirun}，\texttt{dmimw}の各コマンドが利用できるようになります．
+さらに，次回以降のログインしたときに自動的にパスが通るようにするために，
+.bashrcを編集して次のコマンドを書いた行を追加してください：
+\begin{code}
+export PATH=$PATH:~/dmi/bin
+\end{code}%$
+
+今はホームディレクトリ以下がファイル共有されていることを仮定しているため，
+以上の作業で，クラスタ内のすべてのノードでDMIがインストールされパスが設定されたことになります．
+ファイル共有されていない場合，すべてのノードで上記の手順によってDMIのインストールとパスの設定を行ってください．
+
+\subsection{コンパイル}
+
+dmi-x.x.x.x/test/ディレクトリの中には，サンプルのDMIプログラムがいくつか入っています．
+ここではtestディレクトリの中のmandel\_dmi.cをコンパイルして実行してみます．
+これはマンデルブロ集合を並列描画するDMIプログラムです．
+ここではコンパイルから実行までの流れの概略のみ説明しますので，
+このDMIプログラムの詳細については\ref{sec:}節を，実行方法の詳細については\ref{sec:}を参照してください．
+
+まず，dmi-x.x.x.x/test/ディレクトリに移動します：
+\begin{code}
+$ cd dmi-x.x.x.x/test/
+\end{code}%$
+コンパイルは以下のコマンドで行います：
+\begin{code}
+$ dmicc -O3 mandel_dmi.c -o mandel_dmi
+\end{code}%$
+これで実行バイナリmandel\_dmiが得られます．
+\texttt{dmicc}コマンドには，gccのコンパイルオプションを任意に指定できます．
+ここでは最適化オプションの\texttt{-O3}を指定しています．
+
+今はホームディレクトリ以下がファイル共有されていることを仮定しているため，
+以上の作業で，クラスタ内のすべてのノードで実行バイナリ\texttt{mandel\_dmi}が生成されたことになります．
+ファイル共有されていない場合，すべてのノードでコンパイルを行って実行バイナリ\texttt{mandel\_dmi}を作ってください．
+
+\subsection{実行}
+
+kototoi000，kototoi001というホスト名を持つ2つのノードでmandel\_dmiを実行して並列計算を行うとします．
+わかりやすいように，ターミナルを2個起動してください
+\footnote{以下の作業は，それなりにテンポ良く行ってください．
+そうでないと，いろいろコマンドを入力してノードの参加/脱退させる前に，並列計算の方が終了してしまいます．}．
+
+まず，ターミナル1からkototoi000にログインして，コマンドラインから，
+\begin{code}
+$ dmirun ./mandel_dmi 480 480 480 1000000 0
+=== initialized ===
+=== joined ===
+press any key to continue ...   # ここでもEnterキーを入力する
+\end{code}%$
+と入力すると，480個のタスクが生成されて実行が始まります．
+するとDMIプログラムが実行され始め，ターミナル1では以下のような出力が見えるはずです：
+\begin{code}
+$ ./dmirun ./mandel_dmi 480 480 480 1000000 0
+=== initialized ===
+=== joined ===
+press any key to continue ...
+
+welcome 0!
+=== opened ===
+started
+started
+started
+started
+started
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 started
+44 45 46 started
+started
+47 48 50 49 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 78 77 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110  
+\end{code}%$
+出力されている数字が，処理されたタスクの番号です．
+479番が一番最後のタスクになります．
+
+次に，ターミナル2からkototoi001にログインして，コマンドラインから，
+\begin{code}
+$ dmirun -i kototoi000 ./mandel_dmi
+\end{code}%$
+と入力すると，kototoi001を先ほどkototoi000で実行したDMIプログラムに参加させ，並列計算の計算規模が拡張させることができます．
+このときターミナル2では，
+\begin{code}
+$ dmirun -i kototoi000 ./mandel_dmi
+=== initialized ===
+=== joined ===
+started
+started
+started
+started
+started
+started
+=== opened ===
+started
+started
+127 128 129 130 131 132 133 134 143 144 145 146 147 148 150 151 159 160 161 162 163 164 166 167 175 176 177 178 179 180 182 183 191 192 193 194 195 196 198 199 207 208 209 210 211 212 214 215 223 224 225 226  
+\end{code}%$
+のようなkototoi001からの出力が見えるはずです．
+
+さて，このときターミナル1とターミナル2では，それぞれkototoi000とkototoi001からの出力が続いており，
+並列計算が実行され続けているのがわかりますが，このとき，ターミナル2でCtrl+Cを1回入力すると，
+kototoi001を並列計算から脱退させ，並列計算の計算規模を縮小させることができます．
+実際にターミナル2でCtrl+Cを入力すると，
+\begin{code}
+$ dmirun -i kototoi000 ./mandel_dmi
+=== initialized ===
+=== joined ===
+started
+started
+started
+started
+started
+started
+=== opened ===
+started
+started
+127 128 129 130 131 132 133 134 143 144 145 146 147 148 150 151 159 160 161 162 163 164 166 167 175 176 177 178 179 180 182 183 191 192 193 194 195 196 198 199 207 208 209 210 211 212 214 215 # ここでCtrl+Cを入力
+=== closed ===
+finished
+finished
+finished
+finished
+finished
+finished
+finished
+finished
+=== left ===
+=== finalized ===
+\end{code}%$
+のような出力が得られ，kototoi001のコマンドラインが返ってきます．
+一方，ターミナル1では依然として，
+\begin{code}
+なお，
+$ ./dmirun ./mandel_dmi 480 480 480 1000000 0
+=== initialized ===
+=== joined ===
+press any key to continue ...
+
+welcome 0!
+=== opened ===
+started
+started
+started
+started
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 started
+36 37 started
+started
+38 started
+40 39 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 71 72 70 73 74 75 77 78 76 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 welcome 1!
+135 136 137 138 139 140 141 142 149 152 153 154 155 156 157 158 165 168 169 170 171 172 173 174 181 184 185 186 187 188 189 190 197 200 201 202 203 204 205 206 213 216 217 218 219 220 221 222 223 goodbye 1!
+224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255 256 257 258 259 260 261 262 263 264 265 266 267 268 269 270 271 272 273 274 275 276 277 278 279 280 281 282 283 284 285 286 287 288 289 290 291 292 293 294 295
+\end{code}%$
+のような出力が続いており，kototoi001が脱退しても依然として計算が続いているのがわかります．
+しばらくするとkototoi001でも計算が終了してコマンドラインが返ってきます．
+
+以上が，DMIにおいて動的にノードを参加/脱退させる際のおおまかな実行の流れになります．
+
+
+\chapter{DMIプログラミングの基礎}
+
+本章では，行列行列積のサンプルプログラムを題材として，DMIプログラミングがおおよそどのようなものなのかを概観します．
+詳細な説明はすべて次章以降に回し，本章では，DMIプログラミングの雰囲気とDMIプログラミングにおける共通のルールを説明します．
+
+\section{DMIプログラミングの具体例}
+
+\subsection{行列行列積}
+
+本節では，$pnum$個のDMIスレッドを使って行列行列積を並列に計算するDMIプログラムを題材にして，DMIプログラミングの概観を説明します．
+DMIの最大の目的は，計算規模が動的に拡張/縮小するような並列プログラムを容易に記述可能にすることにありますが，
+ここでは話を簡単化するために，DMIプログラムの実行開始から実行終了まで，
+計算規模を変化させることなく一定数のDMIスレッドで並列に行列行列積を計算するDMIプログラムを題材にします．
+
+解くべき問題は，$n\times n$のサイズの行列$A$，$B$が与えられたとき，行列行列積$AB=C$を求めることです．
+アルゴリズムとしては，簡単な横ブロック分割のアルゴリズムを用います：
+\begin{enumerate}
+\item まず，DMIスレッド0で行列$A$，$B$を初期化します．
+\item \figref{fig:}に示すように，行列$A$を横方向に$pnum$等分します．
+  これらの部分行列を$A_0,A_1,\ldots,A_{pnum-1}$とします．
+  DMIスレッド0は，部分行列$A_0,A_1,\ldots,A_{pnum-1}$と行列$B$をグローバルアドレス空間に書き込みます（\figref{fig:}(A)）．
+\item 各DMIスレッド$i$は，グローバルアドレス空間から$A_i$と$B$を読んで，
+  部分行列行列積$A_iB=C_i$を計算したあと，グローバルアドレス空間に$C_i$を書き込みます（\figref{fig:}(B)）．
+\item DMIスレッド0は，グローバルアドレス空間から行列$C$を読み出します（\figref{fig:}(C)）．
+\end{enumerate}
+
+\subsection{プログラム例}
+
+以上で説明した行列行列積は，DMIで以下のように記述できます．
+各APIのセマンティクスや各用語の意味は次章以降で詳しく解説するので，ここでは雰囲気だけをつかんでください：
+\begin{code}
+#include "dmi_api.h"
+
+typedef struct targ_t
+{
+  int32_t rank;  /* DMIスレッドのランク */
+  int32_t pnum;  /* DMIスレッドの個数 */
+  int32_t n;  /* 行列のサイズ */
+  int64_t a_addr;  /* 行列Aのグローバルメモリ */
+  int64_t b_addr;  /* 行列Bのグローバルメモリ */
+  int64_t c_addr;  /* 行列Cのグローバルメモリ */
+  int64_t barrier_addr;  /* バリア操作のためのグローバル不透明オブジェクト */
+}targ_t;
+
+double sumof_matrix(double *matrix, int32_t n);
+
+void DMI_main(int argc, char **argv)
+{
+  DMI_node_t node;
+  DMI_node_t *nodes;
+  DMI_thread_t *threads;
+  targ_t targ;
+  int32_t i, j, n, node_num, thread_num, rank, pnum;
+  int64_t targ_addr, a_addr, b_addr, c_addr, barrier_addr;
+  
+  if(argc != 4)
+    {
+      fprintf(stderr, "usage : %s node_num thread_num n\n", argv[0]);
+      exit(1);
+    }
+  node_num = atoi(argv[1]);  /* 実行するDMIプロセスの個数 */
+  thread_num = atoi(argv[2]);  /* 各DMIプロセスに生成するDMIスレッドの個数 */
+  n = atoi(argv[3]);  /* 行列のサイズ */
+  pnum = node_num * thread_num;  /* 生成するDMIスレッドの個数 */
+  
+  nodes = (DMI_node_t*)my_malloc(node_num * sizeof(DMI_node_t));
+  threads = (DMI_thread_t*)my_malloc(pnum * sizeof(DMI_thread_t));
+  for(i = 0; i < node_num; i++)  /* すべてのDMIプロセスを参加させる */
+    {
+      DMI_poll(&node);  /* DMIプロセスの参加/脱退通知を検知 */
+      if(node.state == DMI_OPEN)  /* 参加通知ならば */
+        {
+          DMI_welcome(node.dmi_id);  /* そのDMIプロセスの参加を許可 */
+          nodes[i] = node;
+        }
+    }
+  DMI_mmap(&targ_addr, sizeof(targ_t), pnum, NULL);  /* DMIスレッドに渡す引数を格納するグローバルメモリを確保 */
+  DMI_mmap(&barrier_addr, sizeof(DMI_barrier_t), 1, NULL);  /* バリア操作のためのグローバル不透明オブジェクトのグローバルメモリを確保 */
+  DMI_mmap(&a_addr, n / pnum * n * sizeof(double), pnum, NULL);  /* 行列Aのグローバルメモリを確保 */
+  DMI_mmap(&b_addr, n * n * sizeof(double), 1, NULL);  /* 行列Bのグローバルメモリを確保 */
+  DMI_mmap(&c_addr, n / pnum * n * sizeof(double), pnum, NULL);  /* 行列Cのグローバルメモリを確保 */
+  DMI_barrier_init(barrier_addr);  /* バリア操作のためのグローバル不透明オブジェクトの初期化 */
+  for(rank = 0; rank < pnum; rank++)  /* 各DMIスレッドに渡す引数をグローバルメモリに仕込む */
+    {
+      targ.rank = rank;
+      targ.pnum = pnum;
+      targ.n = n;
+      targ.a_addr = a_addr;
+      targ.b_addr = b_addr;
+      targ.c_addr = c_addr;
+      targ.barrier_addr = barrier_addr;
+      DMI_write(targ_addr + rank * sizeof(targ_t), sizeof(targ_t), &targ, DMI_EXCLUSIVE_WRITE, NULL);
+    }
+  rank = 0;
+  for(i = 0; i < node_num; i++)  /* 参加中のすべてのDMIプロセスに関して */
+    {
+      node = nodes[i];
+      for(j = 0; j < thread_num; j++)  /* 各DMIプロセスあたりthread_num個のDMIスレッドを生成 */
+        {
+          DMI_create(&threads[rank], node.dmi_id, targ_addr + rank * sizeof(targ_t), NULL);
+          rank++;
+        }
+    }
+  for(rank = 0; rank < pnum; rank++)  /* すべてのDMIスレッドを回収 */
+    {
+      DMI_join(threads[rank], NULL, NULL);
+    }
+  DMI_barrier_destroy(barrier_addr);  /* バリア操作のためのグローバル不透明オブジェクトを破棄 */
+  DMI_munmap(c_addr, NULL);  /* 行列cのグローバルメモリを解放 */
+  DMI_munmap(b_addr, NULL);  /* 行列Bのグローバルメモリを解放 */
+  DMI_munmap(a_addr, NULL);  /* 行列Aのグローバルメモリを解放 */
+  DMI_munmap(barrier_addr, NULL);  /* バリア操作のためのグローバル不透明オブジェクトのグローバルメモリを解放 */
+  DMI_munmap(targ_addr, NULL);  /* 各DMIスレッドに渡す引数を格納するためのグローバルメモリを解放 */
+  for(i = 0; i < node_num; i++)  /* すべてのDMIプロセスを脱退させる */
+    {
+      DMI_poll(&node);  /* DMIプロセスの参加/脱退通知を検知 */
+      if(node.state == DMI_CLOSE)  /* 脱退通知ならば */
+        {
+          DMI_goodbye(node.dmi_id);  /* そのDMIプロセスの脱退を許可 */
+        }
+    }
+  my_free(threads);
+  my_free(nodes);
+  return;
+}
+
+/* 各DMIスレッドが実行する関数 */
+int64_t DMI_thread(int64_t targ_addr)
+{
+  int32_t my_rank, pnum, i, j, k, n;
+  int64_t a_addr, b_addr, c_addr, barrier_addr;
+  targ_t targ;
+  double *original_a, *original_b, *original_c, *local_a, *local_b, *local_c;
+  double dummy;
+  DMI_local_barrier_t local_barrier;
+  
+  DMI_read(targ_addr, sizeof(targ_t), &targ, DMI_GET_READ, NULL);  /* 引数を読む */
+  my_rank = targ.rank;  /* このDMIスレッドのランク */
+  pnum = targ.pnum;  /* DMIスレッドの個数 */
+  n = targ.n;  /* 行列のサイズ */
+  a_addr = targ.a_addr;  /* 行列Aのグローバルメモリ */
+  b_addr = targ.b_addr;  /* 行列Bのグローバルメモリ */
+  c_addr = targ.c_addr;  /* 行列Cのグローバルメモリ */
+  barrier_addr = targ.barrier_addr;  /* バリア操作のためのグローバル不透明オブジェクト */
+  DMI_local_barrier_init(&local_barrier, barrier_addr);  /* バリア操作のためのローカル不透明オブジェクトを初期化 */
+  
+  local_a = (double*)my_malloc(n / pnum * n * sizeof(double));
+  local_b = (double*)my_malloc(n * n * sizeof(double));
+  local_c = (double*)my_malloc(n / pnum * n * sizeof(double));
+  for(i = 0; i < n / pnum; i++)
+    {
+      for(j = 0; j < n; j++)
+        {
+          local_c[i * n + j] = 0;
+        }
+    }
+  if(my_rank == 0)  /* 行列A，Bを初期化 */
+    {
+      original_a = (double*)my_malloc(n * n * sizeof(double));
+      original_b = (double*)my_malloc(n * n * sizeof(double));
+      original_c = (double*)my_malloc(n * n * sizeof(double));
+      for(i = 0; i < n; i++)
+        {
+          for(j = 0; j < n; j++)
+            {
+              original_a[i * n + j] = 1;
+              original_b[i * n + j] = 1;
+              original_c[i * n + j] = 0;
+            }
+        }
+      DMI_write(a_addr, n * n * sizeof(double), original_a, DMI_EXCLUSIVE_WRITE, NULL);  /* 行列Aのグローバルメモリを初期化 */
+      DMI_write(b_addr, n * n * sizeof(double), original_b, DMI_EXCLUSIVE_WRITE, NULL);  /* 行列Bのグローバルメモリを初期化 */
+    }
+  DMI_local_barrier_allreduce(&local_barrier, 0, &dummy, pnum);  /* バリア操作*/
+  
+  DMI_read(a_addr + my_rank * n / pnum * n * sizeof(double), n / pnum * n * sizeof(double), local_a, DMI_INVALIDATE_READ, NULL);  /* 各DMIスレッドがグローバルメモリから部分行列Aiを読む */
+  DMI_read(b_addr, n * n * sizeof(double), local_b, DMI_INVALIDATE_READ, NULL);  /* 各DMIスレッドがグローバルメモリから行列B全体を読む */
+  for(i = 0; i < n / pnum; i++)  /* 部分行列行列積Ci=AiBを計算 */
+    {
+      for(k = 0; k < n; k++)
+        {
+          for(j = 0; j < n; j++)
+            {
+              local_c[i * n + j] += local_a[i * n + k] * local_b[k * n + j];
+            }
+        }
+    }
+  DMI_write(c_addr + my_rank * n / pnum * n * sizeof(double), n / pnum * n * sizeof(double), local_c, DMI_EXCLUSIVE_WRITE, NULL);  /* 各DMIスレッドが部分行列Ciをグローバルメモリに書く */
+  DMI_local_barrier_allreduce(&local_barrier, 0, &dummy, pnum);  /* バリア操作 */
+  if(my_rank == 0)  /* 結果の行列Cを得る */
+    {
+      DMI_read(c_addr, n * n * sizeof(double), original_c, DMI_INVALIDATE_READ, NULL);  /* 行列C全体をグローバルメモリから読む */
+      my_free(original_c);
+      my_free(original_b);
+      my_free(original_a);
+    }
+  my_free(local_a);
+  my_free(local_b);
+  my_free(local_c);
+  return DMI_NULL;
+}
+\end{code}
+
+\subsection{プログラム解説}
+
+大ざっぱにプログラムを解説します．
+*** 説明 ***
+
+\section{共通のルール}
+
+\subsection{DMIプログラミングのテンプレート}
+
+上記のプログラム例からわかるように，さまざまなAPIが出てきて複雑ですが，
+概念的にはDMIプログラミングはpthreadプログラミングと対応しています．
+pthreadプログラミングと同様に，DMIプログラムの最も基本的なテンプレートは以下のようになります：
+\begin{code}
+#include "dmi_api.h"  /* ヘッダファイルのinclude */
+
+/* DMIプログラムの起動時に1回だけ実行される関数 */
+void DMI_main(int argc, char **argv)
+{
+  ...;
+}
+
+/* 各DMIスレッドが実行する関数 */
+int64_t DMI_thread(int64_t addr)
+{
+  ...;
+}
+\end{code}
+
+要点をまとめます：
+
+\begin{itemize}
+\item ヘッダファイルdmi\_api.hをincludeします．
+\item \texttt{void DMI\_main(int argc, char **argv)}というプロトタイプの関数を必ず記述します．
+  この\texttt{DMI\_main(...)}はC言語の\texttt{main(...)}に相当するもので，
+  DMIプログラムを起動したときに最初に実行される関数で，
+  コマンドライン引数の個数を\texttt{argc}に，引数のデータを\texttt{argv}に取ります．
+\item \texttt{int64\_t DMI\_thread(int64\_t addr)}というプロトタイプの関数を記述します．
+  生成されるDMIスレッドはこの\texttt{DMI\_thread(...)}を実行します．
+  引数の\texttt{addr}はDMIスレッドを生成するときに与える引数です．
+\end{itemize}
+
+\subsection{変数名の命名規則}
+
+DMIでは多数の関数と定数と型を提供しています．
+これらの命名規則は以下のルールに従います：
+
+\begin{itemize}
+\item DMIが提供するすべての関数と定数と型は，プレフィックス\texttt{DMI\_}から始まります．
+\item 関数は\texttt{DMI\_xxx(...)}の形式の名前をしていて\texttt{xxx}は小文字です．
+\item 定数は\texttt{DMI\_XXX}の形式の名前をしていて\texttt{XXX}は大文字です．
+\item 型は\texttt{DMI\_xxx\_t}の形式の名前をしていて\texttt{xxx}は小文字です．
+\end{itemize}
+
+以降，DMIの関数のことをDMIのAPIと呼びます．
+
+\subsection{関数の返り値}
+
+DMIのAPIは，すべて\texttt{int32\_t DMI\_xxx(...)}というプロトタイプを持っています．
+つまり，DMIのAPIの返り値は\texttt{int32\_t}であり，
+そのAPIが成功したときには\texttt{DMI\_TRUE}が返り，失敗したときには\texttt{DMI\_FALSE}が返ります．
+たとえば，割り当てられていないグローバルメモリアドレスをread/writeしようとしたときや，
+存在しもしないDMIスレッドを回収しようとしたときなど，セマンティクス的に違反となるようなAPI呼び出しを行ったときに，
+\texttt{DMI\_FALSE}が返ります．
+上記のプログラムでも，本来なら各APIの返り値が\texttt{DMI\_TRUE}であることを検査すべきですが，簡略化のため省略しています．
+
+\subsection{非同期API}
+
+DMIのAPIは基本的に\textbf{同期API}ですが，いくつかのAPIは\textbf{非同期API}にすることができます．
+非同期APIにできるAPIは，\texttt{int32\_t DMI\_xxx(..., DMI\_local\_status\_t *status)}というプロトタイプを持っていて，
+最後の引数として\texttt{DMI\_local\_status\_t *status}をとるAPIです．
+たとえば，グローバルアドレス空間からreadを行うAPIである，
+\begin{itemize}
+\item \texttt{int32\_t DMI\_read(int64\_t addr, int64\_t size, void *buf, int8\_t mode, DMI\_local\_status\_t *status);}
+\end{itemize}
+は非同期APIにすることができます．
+
+同期APIとして使う場合には，最後の引数\texttt{status}として\texttt{NULL}を指定します．
+たとえば，
+\begin{code}
+DMI_read(addr, size, buf, mode, NULL);
+\end{code}
+というように呼び出せば，この\texttt{DMI\_read(...)}は同期APIになります．
+つまり，グローバルアドレス空間から該当するデータをreadする操作が完了するまで，このAPIは返ってきません．
+
+非同期APIとして使う場合には，最後の引数\texttt{status}として，\texttt{DMI\_local\_status\_t}型の変数へのポインタを渡します．
+たとえば，
+\begin{code}
+DMI\_local\_status\_t status;
+DMI_read(addr, size, buf, mode, &status);
+\end{code}
+というように呼び出せば，この\texttt{DMI\_read(...)}は非同期APIになります．
+つまり，グローバルアドレス空間から該当するデータをreadする操作が完了するのを待つことなく，このAPIはすぐに返ってきます．
+非同期APIの完了を検査したり待機したりするためには以下のAPIを使います：
+
+\begin{itemize}
+\item \texttt{void DMI\_wait(DMI\_local\_status\_t *status, int32\_t *ret\_ptr);}：
+  
+  \texttt{status}が関連付けられている非同期APIが完了するまで待機します．
+  非同期APIの返り値が\texttt{ret\_ptr}に格納されます．
+\item \texttt{int32\_t DMI\_check(DMI\_local\_status\_t *status, int32\_t *ret\_ptr);}：
+  
+  \texttt{status}が関連付けられている非同期APIが完了しているかどうかを検査します．
+  完了していれば\texttt{ret\_ptr}に非同期APIの返り値が格納され，
+  \texttt{DMI\_check(...)}は\texttt{DMI\_TRUE}を返します．
+  完了していなければ\texttt{DMI\_check(...)}は\texttt{DMI\_FALSE}を返し，
+  このときの\texttt{ret\_ptr}の値は未定義です．
+  \texttt{DMI\_wait(...)}とは異なり，\texttt{DMI\_check(...)}はすぐに返ります．
+\end{itemize}
+
+\subsection{グローバル構造体とローカル構造体}
+
+DMIでは，データの共有をグローバルアドレス空間を介して行いますが，
+このときグローバルアドレス空間を介して他のDMIプロセスに渡したとしても，
+データとしての「意味が保存される」データと「意味が保存されない」データがあります．
+たとえば，あるDMIスレッド$t_1$が12345という整数データをグローバルアドレス空間に書き込み，
+それを別のDMIプロセスに存在するDMIスレッド$t_2$がグローバルアドレス空間から読んだとします．
+このときDMIスレッド$t_2$にとっても，このデータは12345という整数データになっています．
+つまり，12345という整数データは，グローバルアドレス空間を介して他のDMIプロセスに渡したとしても意味が保存されます．
+別の例として，あるDMIスレッド$t_1$が適当なファイルをオープンして，
+\texttt{FILE*}型のファイルポインタ\texttt{fp}を扱っていたとします．
+このとき，DMIスレッド$t_1$がグローバルアドレス空間に\texttt{fp}から\texttt{sizeof(FILE)}バイトを書き込み，
+それを別のDMIプロセスに存在するDMIスレッド$t_2$が読んだとします．
+このときDMIスレッド$t_2$が，グローバルアドレス空間から読み出したファイルポインタ\texttt{fp}を使って，
+実際にファイル操作ができるかというと，（もちろんDMIの処理系をどう作るかにもよりますが，おそらく）
+ファイル操作には失敗すると考えられ，実際に失敗します．
+これは，ファイルポインタ\texttt{fp}というのが各DMIプロセスに固有のデータであるためです．
+つまり，ファイルポインタというデータは，グローバルアドレス空間を介して他のDMIプロセスに渡したときに意味が保存されません．
+このように，データには，グローバルアドレス空間を介して別のDMIスレッドに渡したときに，意味が保存されるデータと意味が保存されないデータがあります．
+
+この区別に対応して，DMIが提供する型にも2種類あります．
+1つ目は，その型で宣言された変数が，グローバルアドレス空間を介して別のDMIスレッドに渡しても意味を保存するような型です．
+DMIではこの種類の型を\texttt{グローバル構造体}と呼び，
+グローバル構造体で宣言される変数を\texttt{グローバル不透明オブジェクト}と呼びます．
+グローバル構造体は\texttt{DMI\_xxx\_t}の形式の名前をしていて，
+\texttt{DMI\_}の次の部分には\texttt{local}以外のの文字列が続きます．
+2つ目は，その型で宣言された変数が，グローバルアドレス空間を介して別のDMIスレッドに渡してしまうと意味が保存されないような型です．
+DMIではこの種類の型を\texttt{ローカル構造体}と呼び，
+ローカル構造体で宣言される変数を\texttt{ローカル不透明オブジェクト}と呼びます．
+一方，ローカル構造体は\texttt{DMI\_local\_xxx\_t}の形式の名前をしています．
+
+ややわかりにくいので具体例を見てみます．
+たとえば，バリア操作に使う構造体として\texttt{DMI\_local\_barrier\_t}という型がありますが，これはローカル構造体です．
+よって，\texttt{DMI\_local\_barrier\_t}型の変数\texttt{b}があったとき，
+\texttt{b}の先頭アドレスから\texttt{sizeof(DMI\_local\_barrier\_t)}バイトをグローバルアドレス空間経由で
+他のDMIスレッドに渡しても，渡されたDMIスレッドは\texttt{b}を使うことはできません．
+\texttt{b}はローカル不透明オブジェクトなので意味が保存されないからです．
+別の例として，同じくバリア操作に使う構造体として\texttt{DMI\_barrier\_t}という型がありますが，これはグローバル構造体です．
+よって，\texttt{DMI\_barrier\_t}型の変数\texttt{b}があったとき，
+\texttt{b}の先頭アドレスから\texttt{sizeof(DMI\_barrier\_t)}バイトをグローバルアドレス空間経由で
+他のDMIスレッドに渡したとき，渡されたDMIスレッドは\texttt{b}を使うことができます．
+\texttt{b}はグローバル不透明オブジェクトなので意味が保存されるからです．
+要するに，ローカル不透明オブジェクトはそのDMIスレッドの中でしか使えず，
+グローバル不透明オブジェクトはDMIスレッド間で受け渡しても使えるということです．
+
+具体的には，グローバル構造体とローカル構造体には以下のようなものがあります：
+
+\begin{description}
+\item[グローバル構造体] \texttt{DMI\_thread\_t}，\texttt{DMI\_node\_t}，
+  \texttt{DMI\_mutex\_t}，\texttt{DMI\_cond\_t}，\texttt{DMI\_rwset\_t}
+\item[ローカル構造体] \texttt{DMI\_local\_status\_t}，\texttt{DMI\_local\_barrier\_t}，
+  \texttt{DMI\_local\_rwset\_t}，\texttt{DMI\_local\_group\_t}
+\end{description}
+
+グローバル不透明オブジェクトとローカル不透明オブジェクトを用いたプログラミング方法については，
+\ref{sec:}で詳しく解説しています．
+
+\chapter{プロセスとスレッド}
+
+DMIでは，計算規模を動的に拡張/縮小させることができますが，
+この計算規模の拡張/縮小は，プロセスを参加/脱退させたりプロセス上のスレッドを生成/回収させたりすることで実現します．
+本章では，どのようにしてプロセスを参加/脱退させるのか，スレッドを生成/回収するのかを説明した上で，
+DMIプログラミングによって計算規模を動的に拡張/縮小する方法を解説します．
+
+\section{基本事項}
+
+\subsection{DMIプロセスとDMIスレッド}
+
+DMIのシステム構成を\figref{fig:}に示します．
+DMIでは，各ノードに任意の数の\textbf{DMiプロセス}を立ち上げることができます．
+また，各DMIプロセスには任意の数の\textbf{DMIスレッド}を立ち上げることができます．
+DMIプログラムに記述されたコードを実際に実行するのはDMIスレッドです．
+DMIプロセスやDMIスレッドは任意の数だけ立ち上げることができますが，
+性能を考慮した場合，1個のノードあたり1個のDMIプロセスを，
+1個のCPUコアあたり1個のDMIスレッドを立ち上げるのが理想的です．
+
+\subsection{DMIプログラミングにおける実行モデル}
+
+DMIでは，利用可能なノードが増えたときには並列計算にノードを新たに追加したり，
+利用可能なノードが減ったときには並列計算からノードを削除したりすることで，
+計算規模を動的に変化させるようなプログラムを記述できるようにしています．
+これは，MPIや多くの分散共有メモリ処理系などの既存の分散プログラミング処理系では実現できない機能であり，
+よって，これら既存の分散プログラミング処理系とは実行モデルが大きく異なります．
+MPIなどの既存の多くの分散プログラミング処理系はSPMD型の実行モデルを採用しているのに対して，
+DMIではスレッドfork/join型の実行モデルを採用しています．
+ここではDMIの実行モデルについて解説します．
+
+DMIの実行モデルはpthreadプログラミングと似ています．
+DMIプログラムは以下の形式で記述します：
+\begin{code}
+void DMI_main(int argc, char **argv)
+{
+  ...;
+}
+
+int64_t DMI_thread(int64_t addr)
+{
+  ...;
+}
+\end{code}
+\texttt{DMI\_main(...)}がプログラムの実行時に最初に1回だけ呼び出される関数です．
+\texttt{DMI\_thread(...)}はDMIスレッドを起動したときに実行される関数です．
+プログラムの実行時に1回だけ\texttt{DMI\_main(...)}が実行され，
+以降DMIスレッドを生成すると\texttt{DMI\_thread(...)}が実行されて並列処理が実現されるという部分は，
+pthreadプログラミングと同じです．
+
+ところが，DMIの場合には，最初から最後まで計算規模が一定であるようなプログラムだけではなく，
+プログラムを実行中に動的にDMIプロセスを参加/脱退させることで計算規模を変化させるようなプログラムも記述できるようにするため，
+単純なpthreadプログラミングと比べると，プログラミングはやや複雑になっています．
+まず，DMIプログラミングにおいては，動的にDMIプロセスを参加/脱退させたり，
+その参加/脱退イベントをハンドリングしたりするための処理が必要です．
+また，DMIでは各DMIプロセス上にDMIスレッドを生成して並列処理を実現するわけなので，
+DMIプロセスが参加してきたときにはそのDMIプロセス上にDMIスレッドを生成したり，
+DMIプロセスが脱退しようとしているときにはそのDMIプロセスからDMIスレッドを回収したりするような処理も必要です．
+具体的に，DMIプロセスの参加/脱退やDMIスレッドの生成/回収をどう実現するかは次節以降で詳しく説明していきますが，
+おおよその流れは\figref{fig:}のようになります：
+\begin{enumerate}
+\item あるノードを計算に参加させたい場合，そのノード上に何らかの方法でDMIプロセスを生成して，
+  DMIプログラムに対して\textbf{参加通知}を送ります．
+\item DMIプログラム側で，そのDMIプロセスの参加通知を許可して，そのDMIプロセス上に複数のDMIスレッドを生成します．
+  これによって計算規模が拡大します．
+\item あるノードを計算から脱退させたい場合，そのノード上のDMIプロセスに何らかの方法で脱退通知を送ります．
+\item DMIプログラム側で，そのDMIプロセスの\textbf{脱退通知}を許可して，
+  そのDMIプロセス上のDMIスレッド全てを回収するなどしてDMIプロセス上のDMIスレッドすべてを消したあとで，そのDMIプロセスを脱退させます．
+  これにより計算規模が縮小します．
+\end{enumerate}
+
+\section{プロセスの参加/脱退}
+
+\subsection{\texttt{dmirun}コマンド}
+
+\subsubsection{参加通知の送り方}
+
+\texttt{dmirun}コマンドは，ノード上にDMIプロセスを生成して参加通知を送るための最も基本的なコマンドです．
+ノード$i$を参加させる場合，ノード$i$のコマンドラインで，
+\begin{code}
+$ dmirun ./a.out [./a.outの引数]
+\end{code}%$
+のように\texttt{dmirun}コマンドを実行すると，
+ノード$i$上にDMIプロセスが生成されて\texttt{DMI\_main(...)}が呼び出されます．
+つまり，この\texttt{dmirun}コマンドは，何らかすでに実行されているDMIプログラムに対して参加通知を送るのではなく，
+新しいDMIプログラムを1個起動します．
+DMIプログラムを実行するために一番最初に実行するコマンドです．
+
+一方，新たにDMIプログラムを実行するのではなく，すでに実行中のDMIプログラムに対して参加通知を送るためには，ノード$i$のコマンドラインで，
+\begin{code}
+$ dmirun -i kototoi001 ./a.out
+\end{code}%$
+のように\texttt{dmirun}コマンドを実行すると，
+kototoi001というホスト名のノードで実行されているDMIプロセスが属するDMIプログラムに対して参加通知が送られます．
+なお，参加/脱退通知は「特定のDMIプロセス」に対して送るものではなく，「実行中のDMIプログラム」に対して送るものです．
+よって，\texttt{-i}オプションに指定するホスト名としては，
+参加させたいDMIプログラムを実行中のどのノードのホスト名を指定してもかまいません．
+ここでホスト名を指定するのは，「このホスト名のノードが参加しているDMIプログラムに参加したい」という意味であって，
+指定されたホスト名のノードが参加処理に関して特別何かの役割を担うわけではありません．
+このように\texttt{-i}オプション付きで\texttt{dmirun}コマンドを実行した場合，\texttt{DMI\_main(...)}は実行されず，
+DMIプログラム側がノード$i$の参加通知を検知して許可し，ノード$i$上にDMIスレッドを生成しない限り何も起きません．
+\textbf{参加通知を送ったからといって自動的にDMIスレッドが生成されて並列処理に参加できるわけではないため，
+参加通知を検知して許可し，DMIスレッドを生成するようにDMIプログラムを記述しておかなければならない}という点に注意してください．
+参加通知を許可してDMIスレッドを生成するための方法は\ref{sec:}節で説明します．
+やがてDMIスレッドが生成されると，ノード$i$上で\texttt{DMI\_thread(...)}が実行されます．
+なお，\texttt{-i}オプション付きで\texttt{dmirun}コマンドを実行した場合には\texttt{DMI\_main(...)}が実行されないため，
+\texttt{./a.out}にコマンドライン引数を指定しても意味がありません．
+
+\subsubsection{脱退通知の送り方}
+
+ノード$i$上のDMIプロセスを脱退させるためには，該当のDMIプロセスに対してSIGINTシグナルを送ります．
+最も単純な方法は，先ほど\texttt{dmirun}コマンドを実行させたコマンドラインに，直接Ctrl+Cを送る方法です：
+\begin{code}
+$ dmirun -i kototoi001 ./a.out # 先ほど実行したコマンド
+=== initialized ===
+=== joined ===
+started
+started
+started
+=== opened ===
+started
+212 
+213 
+214 
+215 
+220 
+219 
+221 
+224 
+225                            # 処理が進行しているときに...
+=== closed ===                 # Ctrl+Cを入力する（SIGINTを送る）
+226 
+finished
+finished
+finished
+finished
+=== left ===
+=== finalized ===
+$                              # 脱退が完了してコマンドラインが返ってくる
+\end{code}
+また，該当するプロセスを検索して\texttt{kill}コマンドでSIGINTシグナルを送る方法もあります：
+\begin{code}
+$ ps aux | grep './a.out' | awk '{print $2}' | xargs kill -INT
+\end{code}%$
+
+SIGINTシグナルを送るとノード$i$の脱退通知がDMIプログラムに対して送られます．
+そして，DMIプログラム側でこの脱退通知を検知し，
+ノード$i$上のDMIスレッドがすべて回収されてノード$i$の脱退を許可すると，ノード$i$の脱退が完了します．
+\textbf{脱退通知を送ったからといって自動的に並列処理を脱退できるわけではなく，
+脱退通知を検知して，そのノード上のDMIスレッドをすべて回収したあとで脱退を許可するようにDMIプログラムを記述しておかなければならない}
+という点に注意してください．
+DMIスレッドを回収したあとで脱退通知を許可するための方法は\ref{sec:}節で説明します．
+
+
+\subsubsection{進捗状況の表示}
+
+以上をまとめると，ノード$i$の参加処理の手順は以下のようになります：
+\begin{enumerate}
+\item \texttt{dmirun}コマンドを使い，すでに参加中の適当なノードを指定して参加通知を送ります．
+\item DMIプログラムによってノード$i$の参加通知が検知されます．
+\item DMIプログラムによって参加が許可されます．
+\item DMIプログラムによってノード$i$上にDMIスレッドが生成され，計算規模が拡張します．
+\end{enumerate}
+
+一方で，ノード$i$の脱退処理の手順は以下のようになります：
+\begin{enumerate}
+\item SIGINTシグナルを送ることで，脱退通知を送ります．
+\item DMIプログラムによってノード$i$の脱退通知が許可されます．
+\item DMIプログラムによってノード$i$上のDMIスレッドが回収され，計算規模が縮小します．
+\item DMIプログラムによって脱退が許可されます．
+\end{enumerate}
+
+このような参加/脱退の進捗状況を，\texttt{dmirun}コマンドは以下のように表示します：
+\begin{code}
+$ dmirun -i kototoi001 ./a.out
+=== initialized ===    # DMIプロセスが生成される
+=== joined ===         # 参加通知が送られる
+=== opened ===         # 参加が許可される
+...
+...                    # DMIプログラムの出力
+...
+=== closed ===         # 脱退通知が送られる
+=== left ===           # 脱退が許可される
+=== finalized ===      # DMIプロセスが破棄される
+$
+\end{code}
+たとえば，\texttt{=== closed ===}と出力されているにもかかわらず\texttt{=== left ===}と表示されない状態は，
+脱退通知はすでに送られているものの脱退がまだ許可されていない状態を意味します．
+
+
+\subsubsection{コマンドラインオプション}
+
+以上が\texttt{dmirun}コマンドの基本的な使い方ですが，\texttt{dmirun}コマンドには他にも多様なオプションがあります．
+\begin{code}
+$ dmirun -h
+\end{code}%$
+と入力することで，各オプションの意味を調べることができます．
+ここでは，各オプションの意味を詳細に説明します：
+\begin{itemize}
+\item \texttt{-i <文字列>}オプション：
+  
+  すでに実行中のDMIプログラムに参加するときに，どのノードが実行しているDMIプログラムに参加するのかを指定します．
+  \texttt{-i}オプションのあとには，ホスト名もしくはIPアドレスが指定できます．
+  たとえば，
+  \begin{codev}
+\begin{verbatim}
+$ dmirun -i kototoi001 ./a.out
+\end{verbatim}
+  \end{codev}
+  とすれば，kototoi001が実行しているDMIプログラムに参加通知を送ります．
+\item \texttt{-l <数字>}オプション：
+  
+  同一ノードで複数のDMIプログラムが実行されている場合，ホスト名だけでは区別できないためポート番号で区別する必要があります．
+  \texttt{-i}オプションは，\texttt{dmirun}コマンドで生成されるDMIプロセスが使用するポート番号を明示的に指定できます．
+  たとえば，
+  \begin{codev}
+\begin{verbatim}
+$ dmirun -i kototoi001 -l 12345 ./a.out
+\end{verbatim}
+  \end{codev}%$
+  とすれば，この\texttt{dmirun}コマンドによって生成されるDMIプロセスは12345番ポートに関連付けられます．
+  \texttt{-l}オプションを省略すると，\texttt{-l 7880}が指定されたものと判断されます．
+\item \texttt{-p <数字>}オプション：
+  
+  すでに実行中のDMIプログラムに参加するときに，
+  どのDMIプログラムに参加するかをホスト名とポート番号で指示する場合のポート番号を指示します．
+  よって，\texttt{-p}オプションは必ず\texttt{-i}オプションと同時に使用されます．
+  つまり，\texttt{-i}オプションで指定されたホスト名で生成されているDMIプロセスのうち，
+  どのポート番号に関連付けられているDMIプロセスが実行しているDMIプログラムに参加するかを明示的に指定できます．
+  たとえば，kototoi001のノード上で，
+  \begin{codev}
+\begin{verbatim}
+$ dmirun -i kototoi000 -l 12345 ./a.out
+\end{verbatim}
+  \end{codev}%$
+  として生成されたDMIプロセスと，
+  \begin{codev}
+\begin{verbatim}
+$ dmirun -i kototoi000 -l 67890 ./a.out
+\end{verbatim}
+  \end{codev}%$
+  として生成されたDMIプロセスがあったとします．
+  このとき，kototoi002のノードを，
+  kototoi001のノードで12345番ポートに関連付けられているDMIプロセスが実行しているDMIプログラムに参加させる場合には，
+  kototoi002のノードのコマンドラインで，
+  \begin{codev}
+\begin{verbatim}
+$ dmirun -i kototoi001 -p 12345 ./a.out
+\end{verbatim}
+  \end{codev}%$
+  と指定します．
+  以上をまとめると，ノード$i$のコマンドラインで，
+  \begin{codev}
+\begin{verbatim}
+$ dmirun -i iii -p ppp -l lll ./a.out
+\end{verbatim}
+  \end{codev}%$
+  と指定することの意味は，
+  ノード$i$上に\texttt{lll}番ポートに関連付けられたDMIプロセスを生成した上で，
+  \texttt{iii}というホスト名（またはIPアドレス）のノードで\texttt{xxx}番ポートに関連付けられているDMIプロセスが
+  実行しているDMIプログラムに対して参加通知を送る，という意味です．
+  \texttt{-p}オプションを省略すると，\texttt{-p 7880}が指定されたものと判断されます．
+\item \texttt{-s <数字>}オプション：
+  
+  このDMIプロセスがDMIプログラムに対して提供するメモリ量を指定します．
+  ここで指定するメモリ量は，各DMIプロセスのメモリプールの使用上限値です．
+  メモリプールに関しては\ref{sec:}を参照してください．
+  \texttt{-s}オプションを省略すると，メモリプールの使用上限値は2GBに指定されます．
+\item \texttt{-h}オプション：
+  
+  オプションの一覧との意味を表示します．
+\item \texttt{-v}オプション：
+  
+  DMIのバージョンを表示します．
+\end{itemize}
+
+\subsubsection{並列シェルを使って一括して参加/脱退させる}
+
+以上のように，\texttt{dmirun}コマンドを使うことで，
+DMIプログラムの実行中に任意の数のDMIプロセスを参加/脱退通知を送ることができますが，
+参加/脱退させるたびに該当ノードにログインして\texttt{dmirun}コマンドを入力するのは大変面倒です．
+これに対する1つの解決策は，SSHでコマンドを投入するようなシェルスクリプトを書くことですが，
+意図するタイミングで脱退できるようにSIGINTシグナルを送れるようなシェルスクリプトを書くのは難しいです．
+このような場合，複数のノードに対して同時にコマンドを投入できるような並列シェルを使うと大変便利です．
+たとえば，GXPという並列シェルを使うと，
+意図した複数のノードの一括参加や一括脱退がインタラクティブに容易に実現できます．
+GXPに関しては，以下のWebサイトにドキュメントが揃っているのでご参照ください：
+
+\begin{quote}
+  http://www.logos.ic.i.u-tokyo.ac.jp/gxp/
+\end{quote}
+
+
+
+\subsection{dmimwコマンド}
+
+\subsubsection{概要}
+
+このように\texttt{dmirun}コマンドは動的に計算規模を拡張/縮小させることに対する柔軟性は高いわけですが，
+最初から最後まで計算規模が一定であるようなアプリケーションを実行したい場合には，
+並列シェルを使ったとしても，1ノードごとに参加通知を送り1ノードごとに脱退通知を送るのは面倒です．
+そこでDMIでは，最初から最後まで計算規模が一定であるようなアプリケーションをより簡単に実行するために，
+\texttt{dmimw}コマンドを提供しています
+\footnote{\texttt{dmimw}のmwはmaster workerの略です．}．
+\texttt{dmimw}コマンドでは，ファイルにノードを羅列しておくと，
+そのノードに対して一括して参加通知を送ったあと，一括して脱退通知を送ることができます．
+
+\subsubsection{参加通知の送り方}
+
+\texttt{dmimw}コマンドを使うには，まず以下のように1行に1個ずつホスト名を記述した\textbf{ノードファイル}を用意します．
+ここではnodefile.txtという名前で保存するとします：
+\begin{code}
+kototoi000
+kototoi001
+kototoi002
+kototoi003
+kototoi004
+kototoi005
+kototoi006
+kototoi007
+kototoi008
+kototoi009
+kototoi010
+kototoi011
+kototoi012
+\end{code}
+
+次に，適当なノードのコマンドラインから，
+\begin{code}
+$ dmimw -f nodefile.txt -n 8 ./a.out [./a.outの引数]
+\end{code}%$
+のように\texttt{dmimw}コマンドを実行すると，
+ノードファイルの一番上に書いてあるノードでDMIプログラムが新たに起動されたあと，
+上から2番目から8番目までの合計7個のノードがこのDMIプログラムに対して参加通知を送ります．
+つまり，合計8個のノードが参加します．
+具体的には，nodefile.txtの一番上に書いてあるkototoi000のノードで，
+\begin{code}
+$ dmirun ./a.out [./a.outの引数]
+\end{code}%$
+というコマンドが実行されてDMIプログラムが新たに起動されたあと，
+kototoi001，kototoi002，$\cdots$，kototoi007の7個のノードで，
+\begin{code}
+$ dmirun -i kototoi000 ./a.out
+\end{code}%$
+が実行されて，このDMIプログラムに対して参加通知が送られます．
+\texttt{dmimw}コマンドは各ノードに1個ずつログインして\texttt{dmirun}コマンドを入力する手間を省くだけであり，
+\texttt{dmimw}コマンドを使う場合であっても，
+ファイルで指定したノード上に自動的にDMIスレッドが生成されて並列処理が行われるわけではなく，
+参加通知を検知して許可し，DMIスレッドを生成するようにDMIプログラムを記述しておかなければならないという点に注意してください．
+
+なお，\texttt{dmimw}コマンドを実行するためには，
+この\texttt{dmimw}コマンドを実行するノードから，
+DMIプロセスが生成される各ノードに対してSSH接続できる必要があります．
+
+\subsubsection{脱退通知の送り方}
+
+DMIプログラムを終了する際には，\texttt{dmimw}コマンドに対してSIGINTシグナルを送ります．
+具体的には，\texttt{dmimw}コマンドのコマンドラインに対してCtrl+Cを送るか，
+または\texttt{kill}コマンドでSIGINTシグナルを送ります．
+これにより，参加しているすべてのノードに対して脱退通知を送ることができます．
+上の例の場合，8個のノードに対して脱退通知が送られます．
+\texttt{dmimw}コマンドは各ノードに1個ずつログインしてSIGINTシグナルを送る手間を省くだけであり，
+\texttt{dmimw}コマンドを使う場合であっても，
+SIGINTシグナルを送っただけですべてのノードが自動的に並列処理を脱退するわけではなく，
+脱退通知を検知して，そのノード上のDMIスレッドをすべて回収したあとで脱退を許可するようにDMIプログラムを記述しておかなければならない
+という点に注意してください．
+
+
+\subsubsection{ノードファイルのフォーマット}
+
+ノードファイルには，各ノードのホスト名またはIPアドレスのあとに，
+そのノード上で\texttt{dmirun}コマンドが実行されるときに付けたいオプションを付記することができます．
+たとえば，
+\begin{code}
+kototoi000 -s 1024000000
+kototoi001 -s 1024000000
+kototoi002 -s 1024000000
+kototoi003 -s 1024000000
+kototoi003 -l 12345
+kototoi004
+kototoi005
+kototoi006
+kototoi007
+kototoi008
+kototoi009
+kototoi010
+kototoi011
+kototoi012
+\end{code}
+のように記述した上で，
+\begin{code}
+$ dmimw -f nodefile.txt -n 8 ./a.out [./a.outの引数]
+\end{code}%$
+として\texttt{dmimw}コマンドを実行すると，
+kototoi000では，
+\begin{code}
+$ dmirun -s 1024000000 ./a.out [./a.outの引数]
+\end{code}%$
+というコマンドが実行され，kototoi001からkototoi003までのノードでは，
+\begin{code}
+$ dmirun -i kototoi000 -s 1024000000 ./a.out
+\end{code}%$
+というコマンドが実行され，さらにkototoi003では，
+\begin{code}
+$ dmirun -i kototoi000 -l 12345 ./a.out
+\end{code}%$
+というコマンドが実行され
+\footnote{1個のノード上では1個のポート番号には1個のDMIプロセスしか関連付けられないため，
+1個のノード上に複数のDMIプロセスを生成したい場合には，
+\texttt{-l}オプションを付けることで明示的にポート番号を区別しないとエラーになります．}，
+kototoi004からkototoi006までのノードでは，
+\begin{code}
+$ dmirun -i kototoi000 ./a.out
+\end{code}%$
+というコマンドが実行されます．
+
+\subsubsection{コマンドラインオプション}
+
+\texttt{dmimw}コマンドに指定できるオプションは以下のとおりです：
+
+\begin{itemize}
+\item \texttt{-f <文字列>}オプション：
+  
+  ノードファイルを指定します．
+\item \texttt{-n <数字>}オプション：
+  
+  ノードファイルのうち，上から何個のノードをDMIプログラムに参加させるかを指定します．
+  \texttt{-n}オプションを省略した場合，ノードファイルに記述されたすべてのノードがDMIプログラムに参加します．
+\item \texttt{-m <数字>}オプション：
+  
+  一番最初に新たにDMIプログラムが起動されるノードを，ノードファイルの上から何行目のノードにするかを指定します．
+  \texttt{-m}オプションを省略した場合，\texttt{-m 1}が指定されたものと判断されます．
+  つまり，デフォルトではノードファイルの1行目に記述されたノードで新たにDMIプログラムが起動されます．
+\item \texttt{-h}オプション：
+  
+  \texttt{dmimw}コマンドのオプションの一覧と意味を表示します．
+\end{itemize}
+
+\subsection{参加/脱退通知の検知と許可}
+
+\subsubsection{概要}
+
+繰り返しますが，\texttt{dmirun}コマンドや\texttt{dmimw}コマンドは単に参加/脱退通知を送るだけです．
+実際に並列処理に参加するためには，DMIプログラム側で参加通知を検知して参加を許可し，DMIスレッドを生成する必要があります．
+また，実際に並列処理から脱退するためには，DMIプログラム側で脱退通知を検知して，
+そのノード上のすべてのDMIスレッドを回収したあとで脱退を許可する必要があります．
+よって，ここでは参加/脱退通知を検知して許可するための手順を解説します．
+
+\subsubsection{参加/脱退通知を検知するAPI}
+
+参加/脱退通知を検知するには，\texttt{DMI\_poll(...)}または\texttt{DMI\_peek(...)}を使います．
+正確なAPIは以下のとおりです：
+\begin{itemize}
+\item \texttt{int32\_t DMI\_poll(DMI\_node\_t *node\_ptr);}：
+  
+  参加/脱退通知が来るまで待機し，参加/脱退通知が生じた場合に，
+  その参加/脱退通知を送ったDMIプロセスに関するさまざまな情報を\texttt{node\_ptr}に格納して返ります．
+  \texttt{DMI\_node\_t}の構造体のメンバについては後述します．
+  参加/脱退通知が生じない限り，\texttt{DMI\_poll(...)}は返りません．
+\item \texttt{int32\_t DMI\_peek(DMI\_node\_t *node\_ptr, int32\_t *flag\_ptr);}：
+  
+  \texttt{DMI\_peek(...)}が呼び出された時点で参加/脱退通知が存在しているかどうか調べ，
+  存在しているならば，\texttt{flag\_ptr}の値を\texttt{DMI\_TRUE}にした上で，
+  その参加/脱退通知を送ったDMIプロセスに関するさまざまな情報を\texttt{node\_ptr}に格納して返ります．
+  存在していないならば，\texttt{flag\_ptr}の値を\texttt{DMI\_FALSE}にした上で返ります．
+  つまり，\texttt{DMI\_poll(...)}は参加/脱退通知が存在するまで待機するのに対して，
+  \texttt{DMI\_peek(...)}は存在しなくてもすぐに返ります．
+\end{itemize}
+
+各DMIプロセスが送ったDMIプログラムに対して生じた参加/脱退通知は，グローバルでFIFOなキューに保存されています．
+そして，\texttt{DMI\_poll(...)}または\texttt{DMI\_peek(...)}を1回呼び出すたびに，
+キューから1個ずつ参加/脱退通知が取り出され，その参加/脱退通知を送ったDMIプロセスの情報を返します．
+よって，複数の参加/脱退通知をほぼ同時に送ったとしてもそれが失われることはありません．
+また，複数のDMIプロセスがほぼ同時に\texttt{DMI\_poll(...)}や\texttt{DMI\_peek(...)}を呼び出したとしても，
+1個の参加/脱退通知が複数の\texttt{DMI\_poll(...)}や\texttt{DMI\_peek(...)}に検知されることもありません．
+
+\subsubsection{\texttt{DMI\_node\_t}構造体}
+
+\texttt{DMI\_node\_t}構造体はグローバル不透明オブジェクトであり，
+参加/脱退通知を送ってきたDMIプロセスに関するさまざまな情報を含んでおり，
+DMIプロセス上にDMIスレッドを生成する場合などにこの情報を利用することができます：
+
+\begin{code}
+typedef struct DMI_node_t
+{
+  int32_t state;
+  int32_t dmi_id;
+  int32_t core;
+  int64_t memory;
+  char hostname[IP_SIZE];
+}DMI_node_t;
+\end{code}
+
+これらのメンバの意味は次のとおりです：
+
+\begin{itemize}
+\item \texttt{state}：参加通知の場合には\texttt{DMI\_OPEN}，脱退の場合には\texttt{DMI\_CLOSE}の値になっています．
+\item \texttt{dmi\_id}：参加/脱退通知を送ってきたDMIプロセスに対して割り当てられた番号です．
+  この番号のことをそのDMIプロセスの\textbf{id}と呼びます．
+  各DMIプロセスのidは，そのDMIプロセスが生成されてから消滅するまで不変であり，
+  かつその時点で存在している他のどのDMIプロセスのidとも異なることが保証されています．
+  よって，あるDMIプロセスが参加通知を送ってきた際のidと脱退通知を送ってき際のidは当然一致します．
+  ただし，DMIプログラムの実行を通じて，異なるDMIプロセスに対して同一のidが割り振られる可能性はあります．
+  たとえば，時刻0から時刻10までに存在したDMIプロセスと，
+  時刻20から時刻30までに存在したDMIプロセスに同一のidが割り振られることがあります．
+\item \texttt{core}：参加/脱退通知を送ってきたDMIプロセスが所属するノードのCPUコア数です．
+  性能上は，CPUコア数の数だけDMIスレッドを生成することが望ましいため，DMIスレッド生成時にこの値を参照する場合が多いです．
+\item \texttt{memory}：参加/脱退通知を送ってきたDMIプロセスが提供しているメモリプールのサイズです．
+  メモリプールに関しては\ref{sec:}を参照してください．
+\item \texttt{hostname}：参加/脱退通知を送ってきたDMIプロセスが所属するノードのホスト名です．
+\end{itemize}
+
+このように，\texttt{DMI\_poll(...)}または\texttt{DMI\_peek(...)}を使うことで，
+参加/脱退通知を送ってきたDMIプロセスに関するさまざまな情報を取得することができます．
+
+
+\subsubsection{参加/脱退を許可するAPI}
+
+参加通知を検知したあと，参加を許可する必要があります．
+参加を許可するAPIは以下のとおりです：
+
+\begin{itemize}
+\item \texttt{int32\_t DMI\_welcome(int32\_t dmi\_id);}：
+  
+  idが\texttt{dmi\_id}のDMIプロセスの参加を許可します．
+\end{itemize}
+
+\texttt{DMI\_welcome(...)}によって参加が許可されると，
+参加通知を送ったDMIプロセスの\texttt{dmirun}コマンドのプログレス表示において\texttt{=== opened ===}が表示されます．
+
+一方で，脱退通知を検知したとき，そのノード上のすべてのDMIスレッドを回収するなどしたあと，脱退を許可する必要があります．
+脱退を許可するAPIは以下のとおりです：
+
+\begin{itemize}
+\item \texttt{int32\_t DMI\_goodbye(int32\_t dmi\_id);}：
+  
+  idが\texttt{dmi\_id}のDMIプロセスの脱退を許可します．
+\end{itemize}
+
+\texttt{DMI\_goodbye(...)}によって脱退が許可されると，
+脱退通知を送ったDMIプロセスにおいて，\texttt{=== left ===}が表示されます．
+
+このように，DMIでは参加/脱退を検知してから参加/脱退を許可するというステップが必要であり，一見これは単に面倒なだけに思えます．
+しかし，いざ並列アプリケーションを記述しようとすると，
+仮に外部からのコマンドによって任意のタイミングで参加/脱退が行われてしまうようでは，
+安全な並列アプリケーションを記述するのが非常に難しくなります．
+当然ですが，並列アプリケーションにおいて参加/脱退が行われても良いタイミングは任意ではなく決まっています．
+よって，意図するタイミングでDMIプログラム側から参加/脱退を指示できるようなプログラミングインタフェースになっていないと，
+動的な参加/脱退に対応したDMIプログラムを記述できません．
+このような事情を考慮した結果，現在のようなAPIになっています．
+
+\subsubsection{具体例}
+
+ここまでに順を追って説明してきたDMIプロセスの参加/脱退の手順を，具体例を通じてまとめます．
+以下のプログラムは，動的なDMIプロセスの参加/脱退を処理します．
+ただし，話を簡単化するためにDMIスレッドの生成/破棄に関する処理を省いているため，計算規模は何も変化しません：
+\begin{code}
+#include "dmi_api.h"
+
+void DMI_main(int argc, char **argv)
+{
+  DMI_node_t node;
+  int my_dmi_id;
+  
+  DMI_rank(&my_dmi_id);  /* このDMIプロセスのidを取得 */
+  while(1)
+    {
+      DMI_poll(&node);  /* 参加/脱退通知を待機 */
+      if(node.state == DMI_OPEN)  /* 参加通知を検知したら */
+        {
+          printf("welcome %d!", node.dmi_id);  /* 参加通知を送ってきたDMIプロセスのidを出力 */
+          DMI_welcome(node.dmi_id);  /* 参加を許可 */
+        }
+      else if(node.state == DMI_CLOSE)  /* 脱退通知を検知したら */
+        {
+          printf("goodbye %d!", node.dmi_id);  /* 脱退通知を送ってきたDMIプロセスのidを出力 */
+          DMI_goodbye(node.dmi_id);  /* 脱退を許可 */
+          if(node.dmi_id == my_dmi_id)  /* その脱退通知が自分のDMIプロセスに対するものだったら */
+            {
+              break;  /* 無限ループを抜けてDMIプログラムを終了 */
+            }
+        }
+    }
+  return;
+}
+\end{code}
+
+上記のプログラムをex.cという名前で保存して，
+kototoi000というノードで以下のコマンドを入力してDMIプログラムを起動します：
+\begin{code}
+$ dmicc -O3 ex.c  # コンパイル
+$ dmirun ./a.out  # 実行
+\end{code}
+
+その後，kototoi001，kototoi002，kototoi003の各ノードで以下のコマンドを入力し，
+今実行したDMIプログラムに参加させます：
+\begin{code}
+$ dmirun -i kototoi000 ./a.out
+\end{code}%$
+すると，以下のような出力が各ノードのコマンドラインに得られ，
+各ノード上のDMIプロセスの参加が完了したことがわかります：
+\begin{code}
+$ dmirun -i kototoi000 ./a.out
+=== initialized ===
+=== joined ===
+=== opened ===
+\end{code}%$
+また，このとき参加/脱退の検知と許可を行っているkototoi000では，
+\begin{code}
+$ dmirun ./a.out
+=== initialized ===
+=== joined ===
+welcome 0!
+=== opened ===
+welcome 1!
+welcome 2!
+welcome 3!
+\end{code}%$
+のような出力が得られており，確かにkototoi001，kototoi002，kototoi003のDMIプロセスに対して参加を許可したことがわかります．
+
+続いて，kototoi001，kototoi002，kototoi003の各ノードでCtrl+Cを入力し，
+3つのDMIプロセスをDMIプログラムから脱退させます：
+\begin{code}
+$ dmirun -i kototoi000 ./a.out
+=== initialized ===
+=== joined ===
+=== opened ===
+                         # ここでCtrl+Cを入力
+\end{code}%$
+すると，以下のような出力が各ノードのコマンドラインに得られ，
+各ノード上のDMIプロセスの脱退が完了したことがわかります：
+\begin{code}
+$ dmirun -i kototoi000 ./a.out
+=== initialized ===
+=== joined ===
+=== opened ===
+=== closed ===
+=== left ===
+=== finalized ===
+\end{code}%$
+また，kototoi001，kototoi002，kototoi003の各ノードでCtrl+Cを入力した後で，
+kototoi000のコマンドラインを見ると，
+\begin{code}
+$ dmirun ./a.out
+=== initialized ===
+=== joined ===
+welcome 0!
+=== opened ===
+welcome 1!
+welcome 2!
+welcome 3!
+goodbye 3!
+goodbye 2!
+goodbye 1!
+$ 
+\end{code}
+と表示されており，確かにkototoi001，kototoi002，kototoi003の脱退を許可したことがわかります．
+
+最後に，kototoi000でCtrl+Cを入力すると，DMIプログラムが終了します：
+\begin{code}
+$ dmirun ./a.out
+=== initialized ===
+=== joined ===
+welcome 0!
+=== opened ===
+welcome 1!
+welcome 2!
+welcome 3!
+goodbye 3!
+goodbye 2!
+goodbye 1!
+=== closed ===
+goodbye 0!
+=== left ===
+=== finalized ===
+$ 
+\end{code}
+
+なお，上記の手順の中で，繰り返しkototoi001，kototoi002，kototoi003を参加/脱退させたり，
+参加時に指定するノードとしてkototoi000以外の参加ノードを指定したりすることも可能です．
+また，上記のDMIプログラムは，\texttt{DMI\_main(...)}を実行しているDMIプロセス自身に対する脱退通知があった場合に，
+DMIプログラムを終了する仕様にしてあるため，\texttt{DMI\_main(...)}を実行しているDMIプロセスに脱退通知を送った時点で，
+他にDMIプロセスがまだ実行中だと，それらのDMIプロセスの挙動は未定義になることに注意してください．
+
+
+\subsubsection{その他のAPI}
+
+プロセスの参加/脱退に関連して，以下のようなAPIがあります：
+
+\begin{itemize}
+\item \texttt{int32\_t DMI\_rank(int32\_t *dmi\_id\_ptr);}：
+  
+  この\texttt{DMI\_rank(...)}を呼び出したDMIプロセスのidを\texttt{dmi\_id\_ptr}に格納します．
+\item \texttt{int32\_t DMI\_nodes(DMI\_node\_t *node\_array, int32\_t *num\_ptr, int32\_t capacity);}：
+  
+  この\texttt{DMI\_nodes(...)}を呼び出した時点で参加しているDMIプロセスの情報を，
+  最大\texttt{capacity}個だけ配列\texttt{node\_array}に格納します．
+  \texttt{num\_ptr}には，実際に配列\texttt{node\_array}に格納したDMIプロセス情報の個数が格納されます．
+  このAPIによって，参加中のすべてのDMIプロセスの情報を一括して取得できます．
+\end{itemize}
+
+\section{スレッドの生成/回収}
+
+\subsection{スレッドの生成/回収/detach}
+
+計算規模を拡張するためには参加を許可したあとでDMIスレッドを生成する必要があり，
+計算規模を縮小するためにはDMIスレッドを回収する必要があります．
+DMIでは，pthreadプログラミングとの対応性を重視したAPIを提供しており，
+pthreadプログラミングと類似したAPIでスレッドの生成/回収/detachを行えます：
+
+\begin{itemize}
+\item \texttt{int32\_t DMI\_create(DMI\_thread\_t *thread\_ptr, int32\_t dmi\_id, int64\_t addr, DMI\_local\_status\_t *status);}：
+  
+  \texttt{dmi\_id}のidを持つDMIプロセス上にDMIスレッドを生成します．
+  DMIスレッドは，idが\texttt{dmi\_id}のDMIプロセス上で
+  \texttt{int64\_t DMI\_thread(int64\_t addr) \{ ... \}}という関数として実行され始めます．
+  \texttt{DMI\_create(...)}に渡した\texttt{addr}の値はそのまま\texttt{DMI\_thread(...)}
+  の引数である\texttt{addr}に渡されます．
+  つまり，この\texttt{addr}がDMIスレッド起動時に与えられる引数です．
+  メモリアクセスについては\ref{sec:}節で詳しく説明しますが，
+  DMIスレッドに渡したいデータを適当なグローバルメモリに格納しておき，
+  そのグローバルメモリアドレスを\texttt{addr}として渡すことで，
+  任意のサイズのデータをDMIスレッドに教えることができます．
+  生成したDMIスレッドのハンドルが\texttt{thread\_ptr}に格納されます．
+  このハンドルはグローバル不透明オブジェクトです．
+  \texttt{status}を指定することで非同期操作にできます．
+\item \texttt{int32\_t DMI\_join(DMI\_thread\_t thread, int64\_t *addr\_ptr, DMI\_local\_status\_t *status);}：
+  
+  \texttt{thread}のハンドルで示されるDMIスレッドを回収します．
+  この\texttt{DMI\_join(...)}は，\texttt{int64\_t DMI\_thread(int64\_t addr) \{ ... \}}が終了したときに返り，
+  \texttt{DMI\_thread(...)}の返り値が\texttt{addr\_ptr}に格納されます．
+  \texttt{status}を指定することで非同期操作にできます．
+\item \texttt{int32\_t DMI\_detach(DMI\_thread\_t thread, DMI\_local\_status\_t *status);}：
+  
+  \texttt{thread}のハンドルで示されるDMIスレッドをdetachします．
+  この\texttt{DMI\_detach(...)}はすぐに返ります．
+  いったんdetachを行うと以降ではDMIスレッドを制御できなくなるため，
+  \texttt{int64\_t DMI\_thread(int64\_t addr) \{ ... \}}の完了を待ち合わせることなどはできなくなります．
+  \texttt{status}を指定することで非同期操作にできます．
+\item \texttt{int32\_t DMI\_self(DMI\_thread\_t *thread\_ptr);}：
+  
+  この\texttt{DMI\_self(...)}を呼び出したDMIスレッドのハンドルを\texttt{thread\_ptr}に返します．
+\end{itemize}
+
+\subsection{具体例}
+
+\ref{sec:}節で説明したDMIプログラムを拡張して，
+参加してきたDMIプロセスに対してDMIスレッドを生成し，
+脱退するDMIプロセスからDMIスレッドを回収する処理を加えると以下のようになります．
+このプログラムでは，各DMIスレッドにランクを割り当て，各DMIスレッドに表示させています．
+グローバルアドレス空間に対するメモリ確保/解放やread/writeのAPIについての詳細は\ref{sec:}を参照してください：
+\begin{code}
+#include "dmi_api.h"
+
+#define NODE_MAX 64  /* 簡単のためDMIプロセス数の上限値を決め打つ */
+#define CORE_MAX 8  /* 簡単のため各ノードに生成するDMIスレッド数の上限値を決め打つ */
+#define THREAD_MAX (NODE_MAX * CORE_MAX)  /* 生成されるDMIスレッド数の上限値 */
+
+typedef struct targ_t
+{
+  int32_t rank;  /* DMIスレッドのランク */
+  int32_t flag;  /* DMIスレッドに対して終了を指示するために使う */
+}targ_t;
+
+void DMI_main(int argc, char **argv)
+{
+  targ_t targ;
+  DMI_node_t node;
+  DMI_thread_t threads[THREAD_MAX];
+  int i, my_dmi_id, rank, flag;
+  int64_t targ_addr, my_targ_addr;
+
+  DMI_rank(&my_dmi_id);  /* このDMIプロセスのidを取得 */
+  DMI_mmap(&targ_addr, sizeof(targ_t), THREAD_MAX, NULL);  /* 各DMIスレッドに渡す引数のためのグローバルメモリを確保 */
+  for(rank = 0; rank < THREAD_MAX; rank++)  /* 各DMIスレッドに渡す引数を初期化 */
+    {
+      targ.rank = rank;
+      targ.flag = 0;
+      DMI_write(targ_addr + rank * sizeof(targ_t), sizeof(targ_t), &targ, DMI_EXCLUSIVE_WRITE, NULL);  /* グローバルアドレス空間に書き込む */
+    }
+  while(1)
+    {
+      DMI_poll(&node);  /* 参加/脱退通知を待機 */
+      if(node.state == DMI_OPEN)  /* 参加通知を検知したら */
+        {
+          printf("welcome %d!\n", node.dmi_id);
+          DMI_welcome(node.dmi_id);  /* 参加を許可 */
+          for(i = 0; i < node.core; i++)  /* コア数だけDMIスレッドを生成 */
+            {
+              rank = node.dmi_id * CORE_MAX + i;  /* 生成するDMIスレッドのランクを決める */
+              my_targ_addr = targ_addr + rank * sizeof(targ_t);  /* 生成するDMIスレッドに渡す引数が格納されているグローバルアドレスアドレスを求める */
+              flag = 1;  /* flag==1である限り，DMIスレッドは走り続けていて良い */
+              DMI_write((int64_t)&(((targ_t*)my_targ_addr)->flag), sizeof(int32_t), &flag, DMI_PUT_WRITE, NULL);  /* flagの値をグローバルアドレス空間に書き込む */
+              DMI_create(&threads[rank], node.dmi_id, my_targ_addr, NULL);  /* DMIスレッドを生成 */
+            }
+        }
+      else if(node.state == DMI_CLOSE)  /* 脱退通知を検知したら */
+        {
+          for(i = 0; i < node.core; i++)  /* そのDMIプロセス上のすべてのDMIスレッドに終了を指示 */
+            {
+              rank = node.dmi_id * CORE_MAX + i;  /* DMIスレッドのランクを求める */
+              my_targ_addr = targ_addr + rank * sizeof(targ_t);
+              flag = 0;  /* flag==0として，DMIスレッドに終了を指示 */
+              DMI_write((int64_t)&(((targ_t*)my_targ_addr)->flag), sizeof(int32_t), &flag, DMI_PUT_WRITE, NULL);  /* flagの値をグローバルアドレス空間に書き込む */
+            }
+          for(i = 0; i < node.core; i++)  /* そのDMIプロセス上のすべてのDMIスレッドを回収 */
+            {
+              rank = node.dmi_id * CORE_MAX + i;
+              DMI_join(threads[rank], NULL, NULL);  /* DMIスレッドを回収 */
+            }
+          printf("goodbye %d!\n", node.dmi_id);
+          DMI_goodbye(node.dmi_id);  /* 脱退を許可 */
+          if(node.dmi_id == my_dmi_id)  /* その脱退通知が自分のDMIプロセスに対するものだったら */
+            {
+              break;  /* 無限ループを抜けてDMIプログラムを終了 */
+            }
+        }
+    }
+  DMI_munmap(targ_addr, NULL);  /* グローバルメモリを解放 */
+  return;
+}
+
+/* 各DMIスレッドが実行する関数 */
+int64_t DMI_thread(int64_t targ_addr)
+{
+  targ_t targ;
+  int flag;
+
+  DMI_read(targ_addr, sizeof(targ_t), &targ, DMI_GET_READ, NULL);  /* このDMIスレッドに渡された引数を読み出す */
+  printf("started! %d\n", targ.rank);
+  while(1)
+    {
+      DMI_read((int64_t)&(((targ_t*)targ_addr)->flag), sizeof(int32_t), &flag, DMI_UPDATE_READ, NULL);  /* flagの値を読む */
+      if(flag == 0)  /* flagが0だったら */
+        {
+          break;  /* DMIスレッドを終了 */
+        }
+      printf("running! %d\n", targ.rank);
+      sleep(1);
+    }
+  printf("finished! %d\n", targ.rank);
+  return DMI_NULL;
+}
+\end{code}
+
+上記のプログラムでは，参加通知を送ってきたDMIプロセスに対してDMIスレッドを生成し，
+脱退通知を送ってきたDMIプロセスからDMIスレッドを回収することで計算規模を増減させています．
+DMIスレッドを回収する部分で，\texttt{flag}を使っている部分が鍵です．
+DMIスレッドを回収するとはいえ，何もしなければ，そのDMIスレッドは走り続けたままなので回収できません．
+そこで，\texttt{flag}が\texttt{1}ならばDMIスレッドは走り続けても良く，
+\texttt{flag}が\texttt{0}ならばDMIスレッドは終了しなければならないという意味で\texttt{flag}を使います．
+各DMIスレッドは，定期的に\texttt{flag}の値を観察し\texttt{0}になっていたら終了するようにしておき，
+\texttt{DMI\_main(...)}側では回収したいDMIスレッドの\texttt{flag}を\texttt{0}に書き換えるようにすれば，
+DMIスレッドを終了させ回収することができるわけです．
+
+実行方法は\ref{sec:}節で述べた手順と同様です．
+DMIプロセスを参加/脱退させてDMIスレッドが生成/回収されるときの様子を観察してみてください．
+描くDMIスレッドが生成されると\texttt{started!}，消滅すると\texttt{finished!}が表示されます．
+
+\subsection{補足}
+
+\subsubsection{\texttt{DMI\_main(...)}を途中で脱退させることは可能か}
+
+\ref{sec:}で説明したDMIプログラムでは，
+一番最初に実行されるのは\texttt{DMI\_main(...)}であり，
+一番最後まで実行されているのも\texttt{DMI\_main(...)}です．
+つまり，\texttt{DMI\_main(...)}は，DMIプログラムの実行が始まってから終わるまで常に実行されていることになります．
+これは，\texttt{DMI\_main(...)}を実行しているDMIプロセス，
+つまり，最初にDMIプログラムを起動したDMIプロセスは，DMIプログラムが終了するまでは脱退できないことを意味します．
+
+ところが，実はDMIでは，DMIプログラムが終了する前に\texttt{DMI\_main(...)}を終了させて，
+最初にDMIプログラムを起動したDMIプロセスを脱退させることも可能です．
+この場合，\texttt{DMI\_main(...)}を終了してしまった後は，
+各DMIスレッドが実行している\texttt{DMI\_thread(...)}たちだけが協調して動作することになります．
+このようなプログラミング技法を応用すると，DMIプログラムの実行開始から実行終了まで存在するような固定的なノードを設置することなく，
+\figref{fig:}に示すように，計算環境を移動して渡り歩いていくような不思議なDMIプログラムを記述することも可能です．
+しかし，計算環境を渡り歩かせることは確かにDMIの処理系としては可能なのですが，
+このように固定的なDMIプロセスを一切設けることなく計算環境を渡り歩いていく並列プログラムを記述することは相当に難しいことです．
+この難しさは，DMIにおける参加/脱退の仕組みの難しさに起因しているのではなく，
+固定的なDMIプロセスを設けることなく計算環境を渡り歩いていけるような並列アルゴリズムを設計することの難しさに起因しています．
+
+\chapter{メモリアクセス}
+
+グローバルメモリアドレス処理系において，
+最も基本になるのは，グローバルメモリアドレス空間に対するread/writeです．
+本章では，DMIにおけるグローバルメモリアドレス空間の構成について基本的な概念を説明したあと，
+最も基本となるread/writeのAPIについて詳しく解説します．
+特に，選択的キャッシュread/writeは，アプリケーションを高速化するうえで非常に重要な手段です．
+そのあと，離散的なread/write，read-write-setなど，
+より高度なread/writeを実現する方法について解説します．
+
+\section{基本事項}
+
+\subsection{ローカルメモリとグローバルメモリ}
+
+DMIのシステム構成は，\figref{fig:}に示すようになっており，
+各DMIスレッドにとってローカルなアドレス空間と，
+全DMIスレッドによって共有されているアドレス空間は明確に区別されています．
+DMIでは，各DMIスレッドにとってローカルなアドレス空間のことを\textbf{ローカルメモリアドレス空間}，
+全DMIスレッドによって共有されているメモリ\textbf{グローバルメモリアドレス空間}と呼びます．
+また，ローカルメモリアドレス空間上のアドレスを\textbf{ローカルメモリアドレス}，
+グローバルメモリアドレス空間上のアドレスを\textbf{グローバルメモリアドレス}と呼びます．
+当然，メモリアクセスを行うためには，アドレス空間上にメモリを確保/解放したり，
+そのメモリにread/writeする必要がありますので，
+本章では，これらのアドレス空間に対するメモリの確保/解放，read/writeをどのように行うかについて解説していきます．
+
+DMIでは，\textbf{ローカルメモリアドレス空間}に対しては，
+通常の\texttt{malloc(...)}/\texttt{free(...)}/\texttt{mmap(...)}/
+\texttt{munmap(...)}/\texttt{alloca(...)}/\texttt{brk(...)}/\texttt{sbrk(...)}などによって，
+メモリを確保/解放することができます．
+説明の都合上，1回の\texttt{malloc(...)}/\texttt{mmap(...)}などによって確保されたメモリのことを，
+以降では\textbf{ローカルメモリ}と呼びます．
+つまり，ローカルメモリとはC言語で普通に確保/解放できる通常のメモリのことです．
+これらのメモリに対するread/writeは，通常の変数参照や配列アクセスなどで行うことができます．
+
+一方で，\textbf{グローバルメモリアドレス空間}に対しては，
+\texttt{DMI\_mmap(...)}/\texttt{DMI\_munmap(...)}によってメモリを確保/解放します．
+1回の\texttt{DMI\_mmap(...)}で確保されたメモリのことを\textbf{グローバルメモリ}と呼びます．
+グローバルメモリアドレスは64ビット整数で表されます．
+また，ローカルメモリにおける\texttt{NULL}に対応する特殊なアドレスとして\texttt{DMI\_NULL}が定義されています．
+グローバルメモリに対するread/writeは，最も基本的には，
+\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}によって行います．
+この\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}は，
+おおよそ以下のようなAPIになっています：
+\begin{itemize}
+\item \texttt{DMI\_read(int64\_t addr, int64\_t size, void *buf, ...)}：
+  
+  グローバルメモリアドレス\texttt{addr}から\texttt{size}バイトをローカルメモリアドレス\texttt{buf}に読み込む．
+\item \texttt{DMI\_write(int64\_t addr, int64\_t size, void *buf, ...)}：
+  
+  ローカルメモリアドレス\texttt{buf}から\texttt{size}バイトをグローバルメモリアドレス\texttt{addr}に書き込む．
+\end{itemize}
+
+多くの分散共有メモリでは，何かのアノテーションを付けてメモリを確保することでグローバルメモリが確保でき，
+あとは通常の変数参照や配列アクセスと同様のシンタックスでグローバルメモリにread/writeすることができます．
+しかし，DMIでは，そのようなことはできず，
+グローバルメモリにread/writeするためには，
+その都度\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}を呼ぶ必要があります．
+このシンタックスは，プログラミングを相当に面倒にしますし，
+既存のpthreadプログラムをDMIプログラムに移植しようと思った場合の変更作業も多くなるという欠点があります．
+しかし，プログラミングが「概念的」に難しいわけではなく，
+既存のpthreadプログラムからの移植に関しても，
+変更すべき部分が「作業的」に増えるだけであって，概念的にはpthreadプログラムとの対応性を確保しています．
+さて，なぜこのようなAPI呼び出しの形式を採用しているかというと，それは性能のためです．
+DMIでは，このようにAPI呼び出しの形式にすることで，
+グローバルメモリに対する各\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}のたびに，
+APIの引数としてさまざまな情報を与えられるようにし，
+各\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}の挙動を細粒度かつ明示的にチューニングできるようにしています．
+多くの分散共有メモリ処理系やPGAS処理系では，明示的なチューニングの行いにくさが問題になっていますが，
+DMIでは，API呼び出し形式を採用することで非常に柔軟なチューニング手段を提供することができています．
+具体的なチューニング手段については本章で解説していきます．
+
+\subsection{プログラミングの基本指針}
+
+多くの分散共有メモリ処理系では，
+「グローバルメモリに対する1回のread/writeをいかに高速に処理するか」を追求しているものが多いです．
+コンシステンシモデルの緩和や，メッセージ数の徹底的な削減，
+通信レイテンシの隠蔽など，実装上の多様な工夫が研究されています．
+これに対してDMIでは，
+\textbf{「1回のread/writeはちょっとくらい遅くても良い．
+その代わり，1回のread/writeで高度なことを実現できるようにする」}ことを基本思想としています．
+上記のように，API呼び出しの形式をとっている時点で，
+DMIにおける1回のread/writeが遅いのは容易に予想が付くと思います．
+つまり，グローバルメモリへのread/writeのたびに関数呼び出しのオーバヘッドがかかることになりますし，
+ローカルメモリとグローバルメモリを明確に区別しているがために，
+グローバルメモリへのread/writeのたびに，ローカルメモリとグローバルメモリの間でのメモリコピーが必要になります．
+ただし，DMIでは，本章で解説するように，
+非常に高度で多様なread/writeのチューニング手段を提供しており，
+1回のread/writeで非常に充実したことを実現できます．
+多くのアプリケーション，特に分散処理が威力を発揮するようなある程度スケーラブルなアプリケーションでは，
+DMIが提供するチューニング手段を上手に組み合わせることで，
+1回のread/writeの遅さを補うくらいの効果が得られる場合が多いと考えられます．
+
+したがって，DMIで高性能なアプリケーションを記述する場合には，
+\textbf{DMIの高度なチューニング手段をうまく組み合わせることで，
+  \texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}などのAPI呼び出し回数を最小限に抑える}ことが鍵になります．
+DMIでアプリケーションを記述する際には，
+最小回数の\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}しか行わないようなプログラミングを意識してください．
+
+
+\section{メモリの確保/解放}
+
+\subsection{ページ}
+
+メモリ確保/解放のAPIの説明の前に，\textbf{ページ}について説明します．
+ページとは，DMIがコンシステンシを維持するうえでの単位のことです．
+DMIがグローバルメモリを確保すると，このグローバルメモリ全体はページ単位に分割されて管理されます．
+これらの各ページの実体は，各DMIプロセスが持つ\textbf{メモリプール}のどれかに確保されます．
+以降，\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}によってグローバルメモリにread/writeすると，
+各DMIプロセスのメモリプールをメモリ資源として，ページを単位としたキャッシュ管理が行われます．
+
+たとえば，\figref{fig:}に示すように，
+DMIプロセス$i$のメモリプールだけに実体が存在するようなページ$p$に含まれる領域を，
+DMIプロセス$j$が\texttt{DMI\_read(...)}したとすると，
+DMIプロセス$j$のメモリプールにはページ$p$が存在しないため\textbf{ページフォルト}が発生します．
+そして，DMIが適切なコンシステンシ維持を行ってページフォルトが解決され，
+やがてDMIプロセス$j$のメモリプールにページ$p$がキャッシュされます．
+次回以降，DMIプロセス$j$がページ$p$を\texttt{DMI\_read(...)}する場合には，
+DMIプロセス$j$はすでにページ$p$をメモリプールに持っているため，
+この\texttt{DMI\_read(...)}はページフォルトを発生させることなく，ローカルに高速に完了します．
+DMIにおける実際のキャッシュ機構は複雑でその正確な仕組みについては\ref{sec:}で解説しますが，
+要するに，DMIでは，各DMIプロセスのメモリプールをメモリ資源として，
+ページを単位としたキャッシュ管理が行われるということです．
+ページは，マルチプロセッサマシンにおけるキャッシュラインに相当するものです．
+
+\subsection{API}
+
+DMIでは，\texttt{DMI\_mmap(...)}/\texttt{DMI\_munmap(...)}によってメモリを確保/解放します．
+正確なAPIは以下のとおりです：
+\begin{itemize}
+\item \texttt{int32\_t DMI\_mmap(int64\_t *dmi\_addr\_ptr, int64\_t page\_size, int64\_t page\_num, DMI\_local\_status\_t *status);}：
+  
+  グローバルメモリアドレス空間に，ページサイズが\texttt{page\_size}のページを\texttt{page\_num}個確保し，
+  そのグローバルメモリのアドレスを\texttt{dmi\_addr\_ptr}に格納します．
+  \texttt{status}を利用することで非同期呼び出しにできます．
+\item \texttt{int32\_t DMI\_munmap(int64\_t dmi\_addr, DMI\_local\_status\_t *status);}：
+  
+  アドレスが\texttt{dmi\_addr}のグローバルメモリを解放します．
+  \texttt{status}を利用することで非同期呼び出しにできます．
+\end{itemize}
+
+\texttt{DMI\_mmap(...)}によって，
+アプリケーションの特性に合致した任意のページサイズを指定してグローバルメモリを確保することができます．
+高性能なプログラムを開発するためには，ページサイズは大きすぎても小さすぎてもいけません．
+これは一般のキャッシュに対していえることですが，
+ページサイズが大きすぎるとfalse sharingが多発して性能が落ちますし，
+かといってページサイズが小さすぎるとページ管理のオーバヘッドが大きくなります．
+ページサイズを小さくすると，DMIが管理する対象のページが増えてページ管理のためのオーバヘッドが増えるのは当然ですが，
+それより重大なのはネットワーク通信時のバンド幅です．
+一般に，ある程度大きなサイズのデータを送る場合に，
+これを複数回に分けて送ると，1回でまとめて送る場合と比較してバンド幅が有効利用できず転送効率が落ちてしまうため，
+ネットワーク通信は可能な限り大きな単位で行われることが重要です．
+よって，DMIにおいては，ページサイズは，false sharingによる悪影響が及ばない範囲で可能な限り大きくとるのが理想です．
+以上のことを一言でまとめると，
+\textbf{アプリケーションの挙動を分析したうえで，
+ページフォルトの回数を最小化するようなページサイズを採用する}のが望ましい，ということになります．
+
+たとえば，\ref{sec:}節で紹介した，行列行列積を横ブロック分割で行うプログラムを考えてみます．
+このプログラムでは，行列$A$と行列$C$はDMIスレッド数分だけ横ブロック分割し，行列$B$は行列1個を単位として使用します．
+よって，各行列のサイズを\texttt{n*n}，プロセッサ数を\texttt{pnum}，行列の各成分をdouble型とすれば，
+行列$A$と行列$C$のページサイズは\texttt{n*n/pnum*sizeof(double)}，
+行列$B$のページサイズは\texttt{n*n*sizeof(double)}に設定するのが理想です
+\footnote{後述する選択的キャッシュread/writeの仕組みを利用方法によっては，，
+行列$C$のページサイズは\texttt{n*n*sizeof(double)}とする方が良いこともあります．}．
+具体的には，以下のように確保することができます：
+\begin{code}
+int64_t a_addr, b_addr, c_addr;
+
+DMI_mmap(&a_addr, n / pnum * n * sizeof(double), pnum, NULL);
+DMI_mmap(&b_addr, n * n * sizeof(double), 1, NULL);
+DMI_mmap(&c_addr, n / pnum * n * sizeof(double), pnum, NULL);
+\end{code}
+
+\subsection{補足}
+
+\subsubsection{ページの実体が確保されるタイミング}
+
+\texttt{DMI\_mmap(...)}は，呼び出された時点ですぐに，
+この\texttt{DMI\_mmap(...)}で呼び出したDMIプロセスのメモリプールにページの実体を確保するわけではありません．
+\texttt{DMI\_mmap(...)}を呼び出した時点で生成されるのは，
+キャッシュ管理のためにDMIが使用するページテーブルだけであって，
+実際にページの実体がメモリプールに確保されるのは，
+そのページに対して初めて\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}が行われた時点です．
+したがって，DMIプロセス$i$が提供しているメモリプールの容量を大幅に上回るようなサイズのグローバルメモリを，
+そのDMIプロセス$i$が\texttt{DMI\_mmap(...)}で確保することも十分に可能です．
+\figref{fig:}に示すように，\texttt{DMI\_mmap(...)}によってひとまず確保したあとで，
+残りのDMIプロセスたちが自分の担当領域に関して\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}
+するようにプログラムしておけば，グローバルメモリを構成するメモリの実体が各DMIプロセス上のメモリプールに分散配置することができます．
+この仕組みを利用すると，多数のDMIプロセスを参加させて巨大なメモリプールを作り出し，
+1DMIプロセスの物理メモリ量をはるかに超えるような巨大なグローバルメモリを実現することもできます．
+これは\textbf{遠隔スワップ}と呼ばれている技術で，
+近年，ディスクアクセスよりも他のノードのメモリへのアクセスの方が高速化していることをふまえ，
+ディスクスワップの代替手段として着目されている技術です．
+ただし，DMIは，遠隔スワップシステムとして作り込んでいるわけではないので，
+それを本業としているような処理系と比較すると性能は良くないと思われます．
+
+\subsubsection{\texttt{DMI\_mmap(...)}/\texttt{DMI\_munmap(...)}は重い}
+
+\texttt{DMI\_mmap(...)}/\texttt{DMI\_munmap(...)}が呼ばれたとき，
+DMIは暗黙的に全DMIプロセスで同期して，必要なデータ管理を行います．
+つまり，\texttt{DMI\_mmap(...)}/\texttt{DMI\_munmap(...)}は，暗黙的に全DMIプロセスとの同期を伴うような重い操作です．
+よって，頻繁な\texttt{DMI\_mmap(...)}/\texttt{DMI\_munmap(...)}の呼び出しは避けるべきであり，
+可能な限り，\texttt{DMI\_mmap(...)}で確保したグローバルメモリをアプリケーション内で再利用することが望まれます．
+同様のことは，通常の共有メモリ環境の\texttt{mmap(...)}/\texttt{munmap(...)}にもいえますが，
+共有メモリ環境では，\texttt{mmap(...)}/\texttt{munmap(...)}の頻繁な呼び出しを避けるための
+賢いメモリ確保/解放のAPIとして\texttt{malloc(...)}/\texttt{free(...)}が用意されているわけです
+\footnote{共有メモリ環境での\texttt{malloc(...)}は，
+要求されるサイズに応じて\texttt{brk(...)}もしくは\texttt{mmap(...)}を呼び出すように実装されていますが，
+\texttt{malloc(...)}のたびにこれらのシステムコールを呼んでいるわけではなく，
+いったん確保した領域を上手に再利用するように実装されています．
+DMIにも，共有メモリ環境での\texttt{malloc(...)}/\texttt{free(...)}に相当するような，
+賢いメモリ確保/解放を行うための\texttt{DMI\_malloc(...)}/\texttt{DMI\_free(...)}が存在することが望まれますが，
+現状のDMIにはまだ実装してありません．}．
+
+\subsubsection{\texttt{DMI\_mmap(...)}/\texttt{DMI\_munmap(...)}を行うタイミング}
+
+\subsubsection{構造体の特定のメンバへのread/write}
+
+\section{グローバルメモリのread/write}
+
+\subsection{API}
+
+\subsubsection{API}
+
+グローバルメモリに対しては\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}でread/writeを行います．
+正確なAPIは以下のとおりです：
+\begin{itemize}
+\item \texttt{int32\_t DMI\_read(int64\_t addr, int64\_t size, void *buf, int8\_t mode, DMI\_local\_status\_t *status);}：
+  
+  グローバルメモリアドレス\texttt{addr}から\texttt{size}バイトをローカルメモリアドレス\texttt{buf}にreadします．
+  \texttt{mode}には，
+  \texttt{DMI\_INVALIDATE\_READ}，\texttt{DMI\_UPDATE\_READ}，\texttt{DMI\_GET\_READ}のいずれかのモードを指定でき，
+  この\texttt{DMI\_read(...)}に伴ってキャッシュをどう管理するかを明示的に指定することができます．
+  \texttt{addr}がページ境界にアラインされている必要はありません．
+  また，[\texttt{addr},\texttt{addr+size})のアドレス領域が複数のページにまたがることもできます．
+  \texttt{status}を利用することで非同期呼び出しにできます．
+\item \texttt{int32\_t DMI\_write(int64\_t addr, int64\_t size, void *buf, int8\_t mode, DMI\_local\_status\_t *status);}：
+  
+  ローカルメモリアドレス\texttt{buf}から\texttt{size}バイトをグローバルメモリアドレス\texttt{addr}にwriteします．
+  \texttt{mode}には，\texttt{DMI\_EXCLUSIVE\_WRITE}，\texttt{DMI\_PUT\_WRITE}のいずれかのモードを指定でき，
+  この\texttt{DMI\_write(...)}に伴ってキャッシュをどう管理するかを明示的に指定することができます．
+  \texttt{addr}がページ境界にアラインされている必要はありません．
+  また，[\texttt{addr},\texttt{addr+size})のアドレス領域が複数のページにまたがることもできます．
+  \texttt{status}を利用することで非同期呼び出しにできます．
+\end{itemize}
+
+\texttt{mode}の値に応じてキャッシュ管理を明示的に指定できる機能は，
+\textbf{選択的キャッシュread/write}と呼ばれ，DMIを特徴づける非常に重要な機能です．
+選択的キャッシュread/writeに関しては，\ref{sec:}節で解説します．
+
+\subsubsection{高性能なプログラムを記述するうえでのポイント}
+
+\ref{sec:}で述べたように，DMIで高性能なプログラムを記述するためには，
+\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}を呼び出す回数を最小限に抑制すべきです．
+たとえば，行列行列積のプログラムにおいて，
+各プロセスが部分行列行列積を求めるときに，
+\begin{code}
+double a, b, c;
+
+for(i = 0; i < n / pnum; i++)
+  {
+    for(k = 0; k < n; k++) 
+      {
+        for(j = 0; j < n; j++)
+          {
+            DMI_read(a_addr + targ.rank * n / pnum * n * sizeof(double) + (i * n + k) * sizeof(double), sizeof(double), &a, DMI_INVALIDATE_READ, NULL);
+            DMI_read(b_addr + (k * n + j) * sizeof(double), sizeof(double), &b, DMI_INVALIDATE_READ, NULL);
+            c = a * b;
+            DMI_write(c_addr + targ.rank * n / pnum * n * sizeof(double) + (i * n + j) * sizeof(double), sizeof(double), &c, DMI_EXCLUSIVE_WRITE, NULL);
+          }
+      }
+  }
+\end{code}
+のように記述するのはオーバヘッドが非常に大きくなります．
+もちろん，行列$A$と行列$C$のページサイズを\texttt{n*n/pnum*sizeof(double)}に，
+行列$B$のページサイズを\texttt{n*n*sizeof(double)}に指定しておけば，
+各行列に関して，1回目の\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}だけがページフォルトを引き起こして，
+そのDMIプロセスのメモリプールにページがキャッシュされるので，
+以降の\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}はローカルに完了します．
+しかし，\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}の関数呼び出しのオーバヘッドが無視できない上，
+DMIでは，DMIプロセスの参加/脱退や各種の高度なチューニングを実現するために，
+\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}の内部で，さまざまな検査を行っています．
+また，ローカルメモリとグローバルメモリの間のコピーがその都度発生するのも重いと思われます．
+したがって，上述のようなコードではなく，
+\begin{code}
+double *local_a, *local_b, *local_c;
+
+local_a = (double*)malloc(n / pnum * n * sizeof(double));
+local_b = (double*)malloc(n * n * sizeof(double));
+local_c = (double*)malloc(n / pnum * n * sizeof(double));
+
+DMI_read(a_addr + targ.rank * n / pnum * n * sizeof(double), n / pnum * n * sizeof(double), local_a, DMI_INVALIDATE_READ, NULL);
+DMI_read(b_addr, n * n * sizeof(double), local_b, DMI_INVALIDATE_READ, NULL);
+for(i = 0; i < n / pnum; i++)
+  {
+    for(k = 0; k < n; k++) 
+      {
+        for(j = 0; j < n; j++)
+          {
+            local_c[i * n + j] += local_a[i * n + k] * local_b[k * n + j];
+          }
+      }
+  }
+DMI_write(c_addr + targ.rank * n / pnum * n * sizeof(double), n / pnum * n * sizeof(double), local_c, DMI_EXCLUSIVE_WRITE, NULL);
+\end{code}
+のように記述するのが理想です
+\footnote{ちなみに，3重のforループをikjの順に行っているのは，CPUのキャッシュヒット率を高めるためです．
+一般に，ijkループで記述するよりもグッと速くなるはずです．
+よりローカルな計算を高速化するためにはキャッシュブロッキングなどの工夫が考えられます．}．
+要するに，高性能な分散プログラミング処理系には一般的にいえることですが，
+DMIでは，ローカルとグローバルを明確に区別したプログラミングを行うことが重要です．
+
+\subsection{コンシステンシモデル}
+
+\subsubsection{直観的な説明}
+
+read/writeベースの並列処理系においては，コンシステンシモデルが定義される必要があります．
+本節ではDMIのコンシステンシモデルについて説明しますが，
+やや専門的な知識が必要ですので，よくわからない場合には以下のような挙動をするものだと考えてください：
+\begin{itemize}
+\item $[$\texttt{addr},\texttt{addr+size})のアドレス領域が1個のページに収まるような
+  同期的な\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}でread/writeされるデータは，
+  プログラマが（おそらく）意図したであろうデータと一致します．
+  よって，特に難しいことを考える必要は（おそらく）ありません．
+\item 非同期\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}は，
+  呼び出したその時点で関数が返るため，いつのデータがread/writeされるかはわかりません．
+  意図したデータをread/writeするには，別途同期などを行う必要があります．
+\item $[$\texttt{addr},\texttt{addr+size})のアドレス領域が複数のページにまたがるような
+  同期的な\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}に関しては，
+  その\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}が
+  ページ単位での小\texttt{DMI\_read(...)}/小\texttt{DMI\_write(...)}に分割され，
+  それら小\texttt{DMI\_read(...)}/小\texttt{DMI\_write(...)}が任意の順序で独立に発行された結果になります．
+\end{itemize}
+
+\subsubsection{正確な説明}
+
+正確には，DMIでは以下のようなコンシステンシモデルを採用しています：
+\begin{itemize}
+\item $[$\texttt{addr},\texttt{addr+size})のアドレス領域が1個のページに収まるような
+  同期的な\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}に関しては，
+  Sequential Consistencyが保証されます．
+  すなわち，複数のDMIプロセスが\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}を発行したとき，
+  これらすべての\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}に関するある逐次的な順序$O$が存在して，
+  全DMIプロセスが，これらすべての\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}が
+  順序$O$で行われたかのように結果を観測することが保証されます．
+  ただし，同一DMIプロセス内での\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}の順序は，
+  そのまま順序$O$に反映されているものとします．
+  言い換えると，異なるDMIプロセスで発行される\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}に関しては，
+  その順序に関してインタリーブが許されますが，
+  そのインタリーブのされ方は全DMIプロセスによって同じように観測されることが保証されます．
+\item $[$\texttt{addr},\texttt{addr+size})のアドレス領域が複数のページにまたがるような
+  同期的な\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}に関しては，
+  その\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}が
+  ページ単位での小\texttt{DMI\_read(...)}/小\texttt{DMI\_write(...)}に分割され，
+  それら小\texttt{DMI\_read(...)}/小\texttt{DMI\_write(...)}が任意の順序で独立に発行されたものと見なされます．
+\item 非同期\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}に関しては，特にコンシステンシは保証されません．
+\end{itemize}
+
+Sequential Consistencyは分散処理系が保証することが可能なコンシステンシモデルのなかで最も強いコンシステンシモデルであり，
+プログラマ視点では極めて直観に従う\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}を実現します．
+一般的には，コンシステンシモデルが強ければ強いほどプログラミングは直観的になりますが，
+保証すべきコンシステンシの制約が強くなるため，必要な通信量が増大して性能は鈍ります．
+そのため，最近の分散共有メモリでは，
+性能上の要請から，より緩和されたコンシステンシモデルが採用される場合が多いです．
+このような状況のなかで，DMIが敢えてSequential Consistencyという強いコンシステンシモデルを採用しているのは，
+非同期な\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}という手段を提供することで，
+プログラマが明示的にコンシステンシモデルを緩和できると考えたためです．
+言い換えると，DMIとしては強いコンシステンシモデルを採用しつつも，
+アプリケーションの要請に応じてコンシステンシモデルを明示的に緩和するための手段を提供しているということです．
+
+\subsubsection{複数のページにまたがる\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}}
+
+複数のページにまたがる同期的な\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}に関して補足しておきます．
+上記の説明を言い換えると，
+複数のページにまたがる同期的な\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}は，
+それが対象とする各ページに対して独立かつ非同期に小\texttt{DMI\_read(...)}/小\texttt{DMI\_write(...)}を発行したあと，
+それらすべての小\texttt{DMI\_read(...)}/小\texttt{DMI\_write(...)}の完了を\texttt{DMI\_wait(...)}で待ち，
+すべての小\texttt{DMI\_read(...)}/小\texttt{DMI\_write(...)}が完了した時点で返るという仕様になっています．
+したがって，たとえば，先頭アドレスが\texttt{addr}のグローバルメモリのページサイズが\texttt{sizeof(int)}のときに，
+DMIプロセス0が，
+\begin{code}
+int buf[] = {0, 0, 0, 0};
+DMI_write(addr, 4 * sizeof(int), buf, DMI_EXCLUSIVE_WRITE, NULL);
+プロセス1と同期;
+DMI_read(addr, 4 * sizeof(int), buf, DMI_GET_READ, NULL);
+for(i = 0; i < 4; i++)
+  {
+    printf("%d ", buf[i]);
+  }
+\end{code}
+というコードを実行し，DMIプロセス1が，
+\begin{code}
+int buf[] = {1, 1, 1, 1};
+DMI_write(addr, 4 * sizeof(int), buf, DMI_EXCLUSIVE_WRITE, NULL);
+プロセス0と同期;
+DMI_read(addr, 4 * sizeof(int), buf, DMI_GET_READ, NULL);
+for(i = 0; i < 4; i++)
+  {
+    printf("%d ", buf[i]);
+  }
+\end{code}
+というコードを実行したとき，
+DMIプロセス0が\texttt{1 1 1 0}と出力し，
+DMIプロセス1が\texttt{0 1 0 0}と出力するような可能性があるということです．
+複数のページにまたがって\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}を呼び出す際には，
+必要に応じて明示的に別途同期を行ってください．
+
+なお，行列行列積の例の場合，
+最後にDMIプロセス0が行列$C$を\texttt{DMI\_read(...)}する部分は，
+複数のページにまたがった\texttt{DMI\_read(...)}が行われています．
+この場合，直前のバリア操作によって，
+\texttt{DMI\_read(...)}されるデータが必ず意図したものになることが保証されています．
+
+\subsection{選択的キャッシュread/write}
+
+\subsubsection{キャッシュ管理の仕組み}
+
+DMIでは，各\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}のたびに，
+ページ単位での何らかのキャッシュ管理が行われますが，
+どのようなキャッシュ管理を行うかを各\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}
+の引数\texttt{mode}として明示的に指定することができます．
+引数\texttt{mode}に何を指定できるかを説明する前に，
+DMIにおけるキャッシュ管理の概要について説明します．
+キャッシュ管理は各ページに関して独立に行われるため，
+以降では，あるページ$p$に着眼して話を進めます．
+
+DMIプロセス$i$のメモリプールにページ$p$の実体が保持されているとき，
+DMIプロセス$i$はページ$p$を\textbf{キャッシュ}しているといいます．
+キャッシュの状態としては，\textbf{INVALIDATE型キャッシュ}と\textbf{UPDATE型キャッシュ}の2種類が存在します．
+INVALIDATE型キャッシュは，ページ$p$が更新されたときに無効化されるキャッシュです．
+UPDATE型キャッシュは，ページ$p$が更新されたときに更新部分のデータが送り付けられることで，つねに最新状態に保たれるキャッシュです．
+また，各ページ$p$には\textbf{オーナー}と呼ばれるDMIプロセスがつねに1個だけ存在します．
+オーナーは，ページ$p$に関するキャッシュ管理の権限を握っており，
+つねに最新状態のページ$p$をメモリプールに保持していて，
+他のDMIプロセスがページ$p$をどのような状態でキャッシュしているのかをすべて把握しています．
+
+DMIプロセス$i$上のDMIスレッドによる\texttt{DMI\_read(...)}がページフォルトを引き起こすのは，
+DMIプロセス$i$がページ$p$をキャッシュしていない場合です．
+DMIプロセス$i$上のDMIスレッドによる\texttt{DMI\_write(...)}がページフォルトを引き起こすのは，
+DMIプロセス$i$がオーナーでない場合，またはページ$p$をキャッシュしているDMIプロセスがDMIプロセス$i$以外にも存在する場合です．
+そして，DMIプロセス$i$でページフォルトが発生した場合には，
+DMIプロセス$i$はオーナーに対してページフォルトを通知し，
+オーナーが適切なキャッシュ管理を行うことでページフォルトが解決されます．
+このときに，INVALIDATE型キャッシュでキャッシュしているDMIプロセスに対する無効化要求や，
+UPDATE型キャッシュでキャッシュしているDMIプロセスに対する更新データの送り付けなどが，オーナーによって行われます．
+オーナーはどれかのDMIプロセスに固定されているわけではなく，
+そのページに対してread/writeが行われるにつれて，必要に応じて動的に変化します．
+また，\texttt{DMI\_mmap(...)}でグローバルメモリを確保した直後では，
+そのグローバルメモリ内のすべてのページのオーナーはその\texttt{DMI\_mmap(...)}を発行したノードに設定されます．
+先ほど，オーナーはつねにページの最新状態を保持していると書きましたが，
+実は\texttt{DMI\_mmap(...)}した直後だけは例外で，オーナーはページの実体を保持していません．
+\ref{sec:}で述べたように，ページの実体が確保されるのは，
+各ページに対して初めての\texttt{DMI\_read(...)}/\texttt{DMI\_write(...)}が発行された時点です．
+
+今の説明からわかるように，
+DMIでは，同一DMIプロセス上の複数のDMIスレッドが1個のメモリプールを共有する構造になっています．
+よって，DMIプロセス$i$上のDMIスレッド$t_1$とDMIスレッド$t_2$があったとき，
+あるページ$p$が，DMIスレッド$t_1$のread/writeによってDMIプロセス$i$のメモリプールにキャッシュされていれば，
+そのあとでDMIスレッド$t_2$がページ$p$に対してread/writeしたときにページフォルトは発生しません．
+このように，DMIでは，マルチコアレベルの並列性を活用するようなハイブリッドプログラミングを透過的に実現しています．
+
+以上のようなキャッシュ管理においては，
+INVALIDATE型キャッシュでキャッシュするのかUPDATE型キャッシュでキャッシュするのか，
+オーナーを動的に変化させるのかどうかなどに自由度があります．
+これを明示的に指定できる機能が選択的キャッシュread/writeです．
+
+\subsubsection{選択的キャッシュread/writeの詳細}
+
+\texttt{DMI\_read(...)}の引数\texttt{mode}には，
+\texttt{DMI\_INVALIDATE\_READ}，\texttt{DMI\_UPDATE\_READ}，\texttt{DMI\_GET\_READ}のいずれかのモードを指定でき，
+ページ$p$のreadに伴ってそれぞれ以下のようなキャッシュ管理を行います：
+
+\begin{description}
+\item[DMI\_INVALIDATE\_READ] DMIプロセス$i$はオーナーに対してページ$p$を要求し，
+  ページ$p$をINVALIDATE型キャッシュとしてDMIプロセス$i$にキャッシュします（\figref{fig:}(A)）．
+\item[DMI\_UPDATE\_READ] DMIプロセス$i$はオーナーに対してページ$p$を要求し，
+  ページ$p$をUPDATE型キャッシュとしてDMIプロセス$i$にキャッシュします（\figref{fig:}(B)）．
+\item[DMI\_GET\_READ] DMIプロセス$i$はオーナーに対してページ$p$の中でreadしたい部分のデータのみを要求して，
+  そのデータのみオーナーから送信してもらいます．
+  ページ$p$はキャッシュしません．
+  すなわち，get操作を行います（\figref{fig:}(C)）．
+\end{description}
+
+\texttt{DMI\_write(...)}の引数\texttt{mode}には，
+\texttt{DMI\_EXCLUSIVE\_WRITE}，\texttt{DMI\_PUT\_WRITE}のいずれかのモードを指定でき，
+ページ$p$のwriteに伴ってそれぞれ以下のようなキャッシュ管理を行います：
+
+\begin{description}
+\item[DMI\_EXCLUSIVE\_WRITE] DMIプロセス$i$は，まずオーナーからページ$p$のオーナー権を奪ってきて，
+  DMIプロセス$i$が新しいオーナーになります．
+  次に，INVAlIDATE型キャッシュでページ$p$をキャッシュしているDMIプロセスに対して無効化要求を送信してキャッシュを無効化し，
+  UPDATE型キャッシュでページ$p$をキャッシュしているDMIプロセスに対して
+  更新部分のデータを送り付けることでキャッシュを最新に保ちます（\figref{fig:}(D)）．
+\item[DMI\_PUT\_WRITE] DMIプロセス$i$は，writeしたい部分のデータをオーナーに対して送信します．
+  すると，オーナーはそのデータに基づいてページ$p$を更新したあと，
+  INVAlIDATE型キャッシュでページ$p$をキャッシュしているDMIプロセスに対して無効化要求を送信してキャッシュを無効化し，
+  UPDATE型キャッシュでページ$p$をキャッシュしているDMIプロセスに対して
+  更新部分のデータを送り付けることでキャッシュを最新に保ちます．
+  このときオーナーは変化しません．
+  つまりput操作を行います（\figref{fig:}(E)）．
+\end{description}
+
+
+\subsubsection{\texttt{mode}を選択する際の一般論}
+
+\texttt{mode}としてどの値を指定するのが好ましいかに関して，具体例を示す前にまず一般論を説明します．
+
+まず\texttt{DMI\_read(...)}についてですが，ページ$p$を今の1回だけreadできれば十分であって，
+今後ページ$p$が更新されるまでの間にreadする可能性が低い場合には，\texttt{DMI\_GET\_READ}モードが適しています．
+また，\texttt{DMI\_GET\_READ}モードはget操作であり，
+ページサイズにかかわらずページの一部のみをreadすることができるため，
+readする範囲がページのごく一部である場合には\texttt{DMI\_GET\_READ}モードが適しています．
+今後ページ$p$が更新されるまでの間にreadする可能性があり，かつページ$p$に対する操作としてreadよりもwriteの比率が高い場合には，
+\texttt{DMI\_INVALIDATE\_READ}モードが適しています．
+今後ページ$p$が更新されるまでの間にreadする可能性があり，かつページ$p$に対する操作としてwriteよりもreadの比率が高い場合には，
+\texttt{DMI\_UPDATE\_READ}モードが適しています．
+このようにDMIでは，INVALIDATE型のキャッシュプロトコルと
+UPDATE型のキャッシュプロトコルを各\texttt{DMI\_read(...)}の粒度でハイブリッドさせることができます．
+当然，キャッシュしているDMIプロセスが多いほど，特に\texttt{DMI\_UPDATE\_READ}モードでキャッシュしているDMIプロセスが多いほど，
+\texttt{DMI\_write(...)}に伴うキャッシュ管理が重たくなります．
+\texttt{DMI\_GET\_READ}モードで\texttt{DMI\_read(...)}しておけば，
+\texttt{DMI\_write(...)}のときには無効化要求や更新要求が必要ありません．
+このような事情を勘案し，アプリケーションにとって最も効率的な\texttt{mode}を選択する必要があります．
+
+次に\texttt{DMI\_write(...)}についてですが，
+writeしたDMIプロセスにオーナーを割り当てたい場合には\texttt{DMI\_EXCLUSIVE\_WRITE}モードが適しています．
+データ並列なアプリケーションなどにおいて，意図するデータ分散（オーナー割り当て）を実現するためには，
+\texttt{DMI\_EXCLUSIVE\_WRITE}モードを使うことで，
+「このページの実体はこのDMIプロセスのメモリプールに格納したい」ということを明示的に指示できます．
+また，計算規模が動的に変化するような動的なアプリケーションにおいては，
+静的にデータ分散を決め打つだけでは次第にデータのローカリティが悪くなることがあり，
+実行開始時に計算規模が予測できない場合にはそもそも静的に最適なデータ分散を指示すること自体が困難です．
+このような場合には，\texttt{DMI\_EXCLUSIVE\_WRITE}モードを使うことで，
+実際にwriteしたDMIプロセスにオーナーを移動させて割り当てることができ，動的にデータのローカリティを改善できます．
+つまり，実際のアクセスパターンに追随して動的にデータのローカリティを適応させることができます．
+しかしながら，\texttt{DMI\_EXCLUSIVE\_WRITE}モードによってオーナーを移動させることには欠点もあります．
+前述のように，DMIにおけるキャッシュ管理では，
+ページフォルトが発生したときオーナーにページフォルトを通知しますが，このとき内部的にはオーナーの「追跡」が行われます．
+オーナーがどう移動しようともこのオーナーの追跡は必ず成功しますが，オーナーの移動回数が多いほど追跡に要するメッセージ数が増えます．
+また，オーナーはつねにページをキャッシュしている必要があるため，新しいオーナーになるDMIプロセスがページをキャッシュしていない場合には，
+古いオーナーが新しいオーナーに対して最新ページを送信することも必要になります．
+このように，オーナーの移動はある程度重い処理を伴うため，
+\texttt{DMI\_EXCLUSIVE\_WRITE}モードによって頻繁にオーナーを移動させるのは避けるべきです．
+ただし，これは\texttt{DMI\_EXCLUSIVE\_WRITE}モードを頻繁に呼び出すことが悪いという意味ではありません．
+同一ノードが連続して\texttt{DMI\_EXCLUSIVE\_WRITE}モードを呼び出すのであれば，
+2回目以降の\texttt{DMI\_EXCLUSIVE\_WRITE}モードはオーナーの移動を引き起こしません．
+むしろ，動的なアプリケーションにおいてデータのローカリティを改善するために，
+「データをつねに\texttt{DMI\_EXCLUSIVE\_WRITE}モードでwriteしておく」ということは良く行われます．
+一方で，すでに何らかのデータ分散（オーナー割り当て）が決定しており，
+そのオーナー割り当てを崩すことなくwriteしたい場合や，
+\texttt{DMI\_EXCLUSIVE\_WRITE}モードでwriteするとオーナーの頻繁な移動を引き起こす可能性がある場合には，
+\texttt{DMI\_PUT\_WRITE}モードが適しています．
+また，\texttt{DMI\_PUT\_WRITE}モードはput操作であり，
+ページサイズにかかわらずページの一部分だけをwriteすることができるため，
+writeする範囲がページのごく一部であるような場合には\texttt{DMI\_PUT\_WRITE}モードが適しています．
+しかし，\texttt{DMI\_PUT\_WRITE}モードは，writeする際に更新部分のデータをオーナーに送信する必要があるため，
+更新部分のデータが大きくかつそのノードがページをキャッシュしているならば，
+\texttt{DMI\_EXCLUSIVE\_WRITE}モードの方が通信量が少なく速い場合があります．
+いずれにせよ，各アプリケーションごとにデータのローカリティ，オーナーの移動の頻度，
+writeが引き起こすであろうデータ通信量などを分析したうえで，最適な\texttt{mode}を選択することが重要です．
+
+このように，この選択的キャッシュread/writeは，read/writeに伴って引き起こされる通信を支配するため，
+DMIプログラムを高性能化する際の90\%は，
+適切な選択的キャッシュread/writeを選択できるかどうかにかかっているといっても過言ではありません．
+
+\subsubsection{具体例（遠隔スワップ）}
+
+\ref{sec:}節で述べたように，遠隔スワップを実現するために巨大なグローバルメモリを\texttt{DMI\_mmap(...)}する場合を考えてみます．
+このとき，1個のDMIプロセスのメモリプールには収まりきらないサイズのグローバルメモリを確保するわけなので，
+1個のDMIプロセスがグローバルメモリ全体を\texttt{DMI\_write(...)}で初期化するのは非効率的です．
+DMIは，メモリプールの使用量が，DMIプロセス起動時に指定されたサイズを超えた場合には，
+適宜ページを置換することでメモリプールの使用量を下げようとするため，
+このようなことをしても一応正しく動作はしますが，ページ置換が頻発するため明らかに性能は落ちます．
+このような場合には，巨大なグローバルメモリのどの部分をどのDMIプロセスのメモリプールに格納するか
+（つまり各ページのオーナーをどのDMIプロセスにするか）を決めておき，
+\texttt{DMI\_mmap(...)}したあとで，複数のDMIプロセスが，
+自分の担当するページに関して\texttt{DMI\_EXCLUSIVE\_WRITE}モードで\texttt{DMI\_write(...)}を発行します．
+具体的には，\texttt{n}バイトのグローバルメモリを\texttt{pnum}個のDMIプロセスのメモリプールに分散配置する場合，
+以下のようにグローバルメモリの初期化を行います：
+\begin{code}
+typedef struct targ_t
+{
+  int32_t rank;  /* DMIスレッドのランク */
+  int32_t pnum;  /* DMIスレッドの個数 */
+  int32_t page_size;  /* ページサイズ */
+  int64_t mem_addr;  /* グローバルメモリの先頭アドレス */
+}targ_t;
+
+void DMI_main(int argc, char **argv)
+{
+  DMI_node_t node;
+  DMI_node_t *nodes;
+  DMI_thread_t *threads;
+  targ_t targ;
+  int32_t i, j, node_num, thread_num, rank, pnum;
+  int64_t targ_addr, mem_addr, page_size, size;
+
+  if(argc != 4)
+    {
+      fprintf(stderr, "usage : %s node_num thread_num size\n", argv[0]);
+      exit(1);
+    } 
+  node_num = atoi(argv[1]);  /* 使用するDMIプロセスの個数 */
+  thread_num = atoi(argv[2]);  /* 各DMIプロセスに生成するDMIスレッドの個数 */
+  size = atoll(argv[3]);  /* 確保するグローバルメモリのサイズ */
+  pnum = node_num * thread_num;  /* 生成するDMIスレッドの個数 */
+  page_size = size / pnum;  /* ページサイズ */
+  nodes = (DMI_node_t*)malloc(node_num * sizeof(DMI_node_t));
+  threads = (DMI_thread_t*)malloc(pnum * sizeof(DMI_thread_t));
+  for(i = 0; i < node_num; i++)  /* node_num個のDMIプロセスの参加を許可 */
+    {
+      DMI_poll(&node);
+      if(node.state == DMI_OPEN)
+        {
+          DMI_welcome(node.dmi_id);
+          nodes[i] = node;  
+        }
+    }
+  DMI_mmap(&targ_addr, sizeof(targ_t), pnum, NULL);
+  DMI_mmap(&mem_addr, page_size, pnum, NULL);  /* ページサイズpage_sizeのページをpnum個持つグローバルメモリBを確保．この時点ではページの実体はまだ割り当てられていない */
+  for(rank = 0; rank < pnum; rank++)  /* 各DMIスレッドに渡す引数を仕込む */
+    {
+      targ.rank = rank;
+      targ.pnum = pnum;
+      targ.mem_addr = mem_addr;
+      targ.page_size = page_size;
+      DMI_write(targ_addr + rank * sizeof(targ_t), sizeof(targ_t), &targ, DMI_EXCLUSIVE_WRITE, NULL);
+    }
+  rank = 0;
+  for(i = 0; i < node_num; i++)  /* 各DMIプロセスにthread_num個のDMIスレッドを生成 */
+    {
+      node = nodes[i];
+      for(j = 0; j < thread_num; j++)
+        {
+          DMI_create(&threads[rank], node.dmi_id, targ_addr + rank * sizeof(targ_t), NULL);
+          rank++;
+        }
+    }
+  ...;
+}
+
+int64_t DMI_thread(int64_t targ_addr)
+{
+  targ_t targ;
+  int i;
+  char *buf;
+
+  DMI_read(targ_addr, sizeof(targ_t), &targ, DMI_GET_READ, NULL);  /* このDMIスレッドに対する引数を読む */
+  buf = (char*)malloc(targ.page_size);
+  for(i = 0; i < targ.page_size; i++)  /* 0で埋めたローカルメモリを作る */
+    {
+      buf[i] = 0;
+    }
+  DMI_write(targ.mem_addr + targ.rank * targ.page_size, targ.page_size, buf, DMI_EXCLUSIVE_WRITE, NULL);  /* このDMIスレッドが担当する分のグローバルメモリをEXCLUSIVEモードでDMI_write(...)する．このとき初めてページの実体が割り当てられる */
+  ...;
+}
+\end{code}
+これにより，意図したとおりに，複数のDMIプロセスに対してページの実体を分散させることができます．
+そして，以降でこのグローバルメモリにwriteする際につねに\texttt{DMI\_PUT\_WRITE}モードを使うようにすれば，
+これらのデータ分散を崩すことなく処理を進められます．
+
+\subsubsection{具体例（行列行列積）}
+
+行列行列積のプログラムの最後の部分で，行列$C$をプロセス0にgatherする処理を考えてみます．
+このとき主に考え方は2とおりあります．
+第1の方法は，各DMIスレッドが部分行列$C_i$を\texttt{DMI\_EXCLUSIVE\_WRITE}モードで\texttt{DMI\_write(...)}し，
+全DMIスレッドで同期をとったあと，
+最後にDMIスレッド0が行列$C$全体を\texttt{DMI\_GET\_READ}モードで\texttt{DMI\_read(...)}する方法です．
+つまり，プログラムとしては，
+\begin{code}
+int64_t DMI_thread(int64_t targ_addr)
+{
+  ...;
+  for(i = 0; i < nn; i++)  /* 部分行列行列積Ci=Ai*Bを計算 */
+    {
+      for(k = 0; k < n; k++)
+       {
+          for(j = 0; j < n; j++)
+            {
+              local_c[i * n + j] += local_a[i * n + k] * local_b[k * n + j];
+            } 
+        }   
+    }   
+  DMI_write(c_addr + targ.rank * nn * n * sizeof(double), nn * n * sizeof(double), local_c, DMI_EXCLUSIVE_WRITE, NULL);  /* 部分行列Ciをグローバルメモリに書き込む */
+  全DMIプロセスでバリア操作;
+  if(targ.rank == 0)
+    {
+      DMI_read(c_addr, n * n * sizeof(double), original_c, DMI_GET_READ, NULL);  /* 行列C全体を読み込む */
+      ...;
+    }
+  ...;
+}
+\end{code}
+のようになります．
+なお，この\texttt{DMI\_read(...)}では，
+\texttt{DMI\_GET\_READ}，\texttt{DMI\_INVALIDATE\_READ}，\texttt{DMI\_UPDATE\_READ}のいずれのモードを使っても，
+各DMIスレッドが存在するDMIプロセスのメモリプールからDMIスレッド0が存在するDMIプロセスのメモリプールに行列$C$全体が転送されるため，
+性能に違いはありません．
+この場合，行列$C$のデータの通信はDMIスレッド0が\texttt{DMI\_read(...)}を発行した時点で起こります．
+
+第2の方法は，各DMIスレッドが部分行列$C_i$を\texttt{DMI\_PUT\_WRITE}モードで\texttt{DMI\_write(...)}し，
+全DMIスレッドで同期をとったあと，
+最後にDMIスレッド0が行列$C$全体を\texttt{DMI\_GET\_READ}モードで\texttt{DMI\_read(...)}する方法です．
+つまり，プログラムとしては，
+\begin{code}
+int64_t DMI_thread(int64_t targ_addr)
+{
+  ...;
+  for(i = 0; i < nn; i++)  /* 部分行列行列積Ci=Ai*Bを計算 */
+    {
+      for(k = 0; k < n; k++)
+       {
+          for(j = 0; j < n; j++)
+            {
+              local_c[i * n + j] += local_a[i * n + k] * local_b[k * n + j];
+            } 
+        }   
+    }   
+  DMI_write(c_addr + targ.rank * nn * n * sizeof(double), nn * n * sizeof(double), local_c, DMI_PUT_WRITE, NULL);  /* 部分行列Ciをグローバルメモリに書き込む */
+  全DMIプロセスでバリア操作;
+  if(targ.rank == 0)
+    {
+      DMI_read(c_addr, n * n * sizeof(double), original_c, DMI_GET_READ, NULL);  /* 行列C全体を読み込む */
+      ...;
+    }
+  ...;
+}
+\end{code}
+のようになります．
+この場合には，行列$C$のデータの通信は各DMIスレッドが\texttt{DMI\_write(...)}を発行した時点で起こり，
+DMIスレッド0による\texttt{DMI\_read(...)}はローカルに完了します．
+
+さて，この処理においてはどちらの方法をとってもほとんど性能上の差異はありませんが，厳密に言えば，
+以下のような理由で第2の方法の方が優れています．
+第1の方法の場合には，
+各DMIスレッドが\texttt{DMI\_EXCLUSIVE\_WRITE}モードで\texttt{DMI\_write(...)}するため，
+行列$C$のページサイズは\texttt{n*n/pnum*sizeof(double)}に設定する必要があります．
+一方で，第2の方法の場合には，
+各DMIスレッドが\texttt{DMI\_PUT\_WRITE}モードで\texttt{DMI\_write(...)}するため，
+この\texttt{DMI\_write(...)}においてはページサイズが関係ありません．
+よって，行列$C$のページサイズを\texttt{n*n*sizeof(double)}にとれるため，
+キャッシュ管理のオーバヘッドが少しだけ小さくて済みます．
+
+\subsection{より高度なチューニング}
+
+\subsubsection{必要なページをキャッシュから落とさない}
+
+各DMIプロセスは，必要に応じてページをメモリプール内にキャッシュしますが，
+当然，際限なくメモリプールにページをキャッシュし続けられるわけではありません．
+使用可能なメモリプールの量は，各DMIプロセスの起動時に\texttt{-s}オプションによって指定されます（指定しない場合のデフォルト値は4GBです）．
+よって，DMIでは，メモリプールの使用量が飽和した場合に自動的にページの追い出しを行い，メモリプールの使用量を下げます．
+正確には，DMIプロセス$i$は，追い出し総量が一定量に達するまで，以下のページ置換アルゴリズムに従ってページの追い出しを行います．
+\begin{itemize}
+\item ページサイズの大きい順にページを追い出します．
+\item 同じページサイズのページに関しては，実装上の負荷の大小を根拠として，以下の優先度順でページを追い出します．
+  \begin{enumerate}
+  \item DMIプロセス$i$がオーナーではないページ
+  \item DMIプロセス$i$がオーナーであり，
+    DMIプロセス$i$以外にそのページをキャッシュしているDMIプロセスが存在するページ
+  \item DMIプロセス$i$がオーナーであり，
+    DMIプロセス$i$以外にそのページをキャッシュしているDMIプロセスが存在しないページ
+  \end{enumerate}
+\item ページの追い出し先としては，追い出しの負荷が小さくなるであろうDMIプロセスを選択します．
+\end{itemize}
+
+このようにDMIでは独自のページ置換アルゴリズムに従ってページの追い出しを行いますが，
+以下のAPIを利用することで，プログラマが明示的に特定のページを追い出し禁止し，
+必要なページがDMIによって勝手にキャッシュから外されるのを防ぐことができます：
+\begin{itemize}
+\item \texttt{int32\_t DMI\_save(int64\_t addr, int64\_t size)}：
+  
+  グローバルメモリアドレス\texttt{addr}から\texttt{size}バイトの範囲に含まれるページを追い出し禁止にします．
+\item \texttt{int32\_t DMI\_unsave(int64\_t addr, int64\_t size)}：
+  
+  グローバルメモリアドレス\texttt{addr}から\texttt{size}バイトの範囲に含まれるページを追い出し可能にします．
+\end{itemize}
+
+初期的にはすべてのページが追い出し可能に設定されています．
+よって，\texttt{DMI\_unsave(...)}は，\texttt{DMI\_save(...)}によっていったん追い出し禁止に変更したページを，
+追い出し可能に戻すために使います．
+
+\subsubsection{データ転送の負荷を分散する}
+
+分散プログラミング処理系においては，Broadcastなどの集合通信を効率化することが重要です．
+DMIでは，集合通信のための特別なAPIは提供していませんが，特定のDMIプロセスに対するデータ転送の要求の集中を自動的に検知して，
+動的にデータ転送の負荷を分散する機能を実装しています．
+ただし，この機能をうまく利用するためには，プログラム上の注意が必要なので説明します．
+
+DMIにおいてデータ転送を動的に負荷分散する機能は，
+BroadcastやAllgatherなど特定の決まったパターンの通信だけを最適化しようとするものではなく，
+もっと一般に，特定のDMIプロセスに対するデータ転送の要求が集中しているときにそれらのデータ転送を負荷分散する機能です．
+ただし，ここでは説明を簡単化するため，大きなページに関してBroadcastが起きる場合を例にして説明します．
+DMIで，ページ$p$に関してBroadcastに相当する通信が起きるのは，
+1個のDMIスレッド$t$がページ$p$に（たとえば）\texttt{DMI\_EXCLUSIVE\_WRITE}モードで\texttt{DMI\_write(...)}したあと，
+全DMIスレッドがページ$p$を（たとえば）\texttt{DMI\_INVALIDATE\_WRITE}モードで\texttt{DMI\_read(...)}する場合です．
+このとき，前述のキャッシュ管理の説明に従うと，
+DMIスレッド$t$が所属するDMIプロセス$i$以外のDMIプロセスに所属する全DMIスレッドの\texttt{DMI\_read(...)}は
+すべてページフォルトを引き起こし，これらのページフォルトはオーナーであるDMIプロセス$i$へと通知されます．
+そして，オーナーであるDMIプロセス$i$は，これらすべてのページフォルトを逐次的に処理して，
+\figref{fig:}に示すように，ページフォルトを引き起こした各DMIプロセスに逐次的にページを転送します．
+しかし，このようにオーナーがすべてのDMIプロセスに対して逐次的にページを転送するのは，データ転送の負荷がオーナーに集中しており非効率的です．
+
+そこで，DMIでは，データ転送の負荷がオーナーに集中していることを検知した場合には，
+ページフォルトを起こした各DMIプロセスからのページ$p$の転送要求の一部を，
+すでにページ$p$をキャッシュしているノードに委任することで，
+\figref{fig:}に示すように，全体としてページ転送を木構造化させます．
+詳細なアルゴリズムの説明は省きますが，ページサイズが大きいページに関するBroadcastに相当する通信が起きた場合，
+ページ転送は，\figref{fig:}に示すようなBinomial Tree状に効率的に負荷分散されます．
+また，Broadcastのような定型的な集合通信でなくとも，データ転送の負荷が検知されれば動的に負荷分散が行われます．
+
+以上の説明からわかるように，このデータ転送の動的負荷分散の機能を利用するためには，
+オーナー以外のDMIプロセスがページをキャッシュしていることが条件になります．
+したがって，たとえば，行列行列積のプログラムで行列$B$をBroadcastする部分を，
+\begin{code}
+if(targ.rank == 0)
+  {
+    ...;
+    DMI_write(b_addr, n * n * sizeof(double), original_b, DMI_EXCLUSIVE_WRITE, NULL);
+  }
+全DMIプロセスでバリア操作;
+...;
+local_b = (double*)malloc(n * n * sizeof(double));
+DMI_read(b_addr, n * n * sizeof(double), local_b, DMI_GET_READ, NULL);
+\end{code}
+のように，\texttt{DMI\_GET\_READ}モードの\texttt{DMI\_read(...)}を使って記述してしまうと，データ転送の動的負荷分散が行われません．
+そこで，
+\begin{code}
+if(targ.rank == 0)
+  {
+    ...;
+    DMI_write(b_addr, n * n * sizeof(double), original_b, DMI_EXCLUSIVE_WRITE, NULL);
+  }
+全DMIプロセスでバリア操作;
+...;
+local_b = (double*)malloc(n * n * sizeof(double));
+DMI_read(b_addr, n * n * sizeof(double), local_b, DMI_INVALIDATE_READ, NULL);
+\end{code}
+のように，\texttt{DMI\_INVALIDATE\_READ}モードの\texttt{DMI\_read(...)}を使うことが鍵になります．
+行列$B$の場合，ここで\texttt{DMI\_read(...)}したあとは再度\texttt{DMI\_read(...)}することがないため，
+その意味では\texttt{DMI\_GET\_READ}モードを使う方が自然ですが，
+データ転送を動的負荷分散させるためにはキャッシュを保持するDMIプロセスを増やす必要があるため，
+敢えて\texttt{DMI\_INVALIDATE\_READ}モードを使っています．
+
+
+\subsection{補足}
+
+\subsubsection{非同期read/writeに与えるローカルメモリを再利用して良いタイミング}
+
+非同期な\texttt{DMI\_write(int64\_t addr, int64\_t size, void *buf, ...)}に関しては，
+その\texttt{DMI\_write(...)}が返ってきた時点で，
+ローカルメモリ\texttt{buf}のデータは完全に処理系に渡されているため，
+すぐに\texttt{buf}を再利用したり解放しても問題ありません．
+すなわち，\texttt{DMI\_wait(...)}によって完了を待たずとも，ローカルメモリ\texttt{buf}を再利用することができます．
+
+非同期な\texttt{DMI\_read(int64\_t addr, int64\_t size, void *buf, ...)}に関しては，
+この非同期操作が完了する直前でローカルメモリ\texttt{buf}にデータが格納されるわけなので，
+\texttt{DMI\_wait(...)}によって完了を待たない限り，
+ローカルメモリ\texttt{buf}には意図するデータは格納されていません．
+当然，\texttt{DMI\_wait(...)}によって完了を待つ前に，
+ローカルメモリ\texttt{buf}を再利用したり解放することはできません．
+
+\subsubsection{グローバル変数は使用できない}
+
+DMIでは，グローバル変数を利用することはできません．
+何らか，DMIスレッド間でデータを共有する必要がある場合には，グローバルメモリを使用してください．
+
+正確に言うと，DMIではグローバル変数を記述することを文法上禁止しているわけではありませんが，おそらくプログラマが意図した動作は起きません．
+これは，DMIスレッドが内部的にはpthreadとして実装されていることに起因します．
+つまり，\texttt{x}というグローバル変数を記述したとき，
+この\texttt{x}は同一ノード内に立ち上がっているDMIスレッドどうしでは共有されていますが，
+別のノード内に立ち上がっているDMIスレッドどうしでは共有されていません．
+言い換えると，\texttt{x}はDMIスレッドの数だけ存在するのではなくDMIプロセスの数だけ存在します．
+よって，グローバル変数を使っても，全DMIスレッド間でのデータ共有が実現できるわけでもなく，
+各DMIスレッド内に固有でどの関数からでも見えるようなデータを実現できるわけでもありません．
+たとえば，
+\begin{code}
+int x = 0;
+
+int64_t DMI_thread(int64_t addr)
+{
+  id = このDMIスレッドのidを取得;
+  if(id == 0)
+    {
+      x = 1;
+    }
+  全DMIスレッドで同期;
+  printf("%d", x);
+}
+\end{code}
+のようなプログラムを書いたときは，
+\texttt{id}が\texttt{0}のDMIスレッドと同じノード上に「たまたま」立ち上がっているDMIスレッドは\texttt{1}を出力しますが，
+残りのDMIスレッドは\texttt{0}を出力します．
+
+
+\subsubsection{スレッドローカルストレージは使用できない}
+
+gccでは，変数宣言の前に\texttt{\_\_thread}を付けることで，スレッドローカルストレージを作ることができます．
+たとえば，
+\begin{code}
+__thread int x = 0;
+
+int64_t DMI_thread(int64_t addr)
+{
+  id = このDMIスレッドのidを取得;
+  if(id == 0)
+    {
+      x = 1;
+    }
+  全DMIスレッドで同期;
+  printf("%d", x);
+}
+\end{code}
+と記述することで，\texttt{id}が\texttt{0}のDMIスレッドだけが\texttt{1}を出力するようにできます．
+つまり，スレッドローカルストレージを使うことで，各DMIスレッド内に固有でどの関数からでも見えるようなデータを実現できます．
+しかし，DMIは，スレッドを移動する際にスレッドローカルストレージ内のデータを移動しないため，
+スレッドが移動した途端に，スレッドローカルストレージ内のデータは意図しないものになります．
+よって，DMIではスレッドローカルストレージは利用できません．
+ただし，スレッドの移動はDMI 1.4からサポート予定の機能であるため，
+DMI 1.3ではスレッドローカルストレージを利用してもプログラムは正しく動作します．
+
+
+\section{離散的なread/write}
+
+\subsection{概要}
+
+\texttt{DMI\_GET\_READ}モードの\texttt{DMI\_read(...)}や
+\texttt{DMI\_PUT\_WRITE}モードの\texttt{DMI\_write(...)}を使うとget/put操作を実現できますが，
+これらは，ある連続したグローバルメモリアドレス領域に対してしか発行することができません．
+これに対して，ここで説明する離散的なread/writeを使うと，
+離散的なグローバルメモリアドレス領域に対して一括してget/put操作を発行することができます．
+たとえば，\figref{fig:}のように4個のグローバルメモリを考え，
+各グローバルメモリは2個のページから構成されているとします．
+このとき，\figref{fig:}に示すような8箇所の離散的なグローバルメモリアドレス領域の値を，一括して効率的にget/putすることができます．
+この離散的なread/writeは，put/get操作の最も汎用的な形態といえます．
+
+有限要素法による応力解析や流体解析などの領域分割型の並列科学技術計算などでは，
+各反復計算において隣接する領域の境界部分の値だけをgetする必要があるため，
+この離散的なread/writeが効果を発揮すると思われます．
+
+\subsection{API}
+
+離散的なread/writeは，以下の4つのAPIで実現できます．
+まず\texttt{DMI\_group\_init(...)}でローカル不透明オブジェクト\texttt{group}を初期化し，
+そのグループを使って\texttt{DMI\_group\_read(...)}/\texttt{DMI\_group\_write(...)}を行い，
+最後に\texttt{DMI\_group\_destroy(...)}でグループを破棄します．
+なお，ローカル不透明オブジェクトに関しては\ref{sec:}で詳しく説明します．
+離散的なread/writeにおいては，不透明オブジェクトに関する面倒な扱いは不要であるため，
+APIを利用するための情報を隠蔽してまとめたものという程度に理解していれば十分です．
+\begin{itemize}
+\item \texttt{int32\_t DMI\_group\_init(DMI\_local\_group\_t *group, int64\_t *addrs, int64\_t *sizes, int64\_t *ptr\_offsets, int32\_t group\_num);}：
+  
+  離散的にアクセスするグローバルメモリアドレス領域を定義して，その結果をローカル不透明オブジェクトとして\texttt{group}に返します．
+  グローバルメモリアドレス領域は，要素数が\texttt{group\_num}の配列\texttt{addr\_offsets}，
+  \texttt{ptr\_offsets}，\texttt{sizes}によって定義します．
+  ここで，\texttt{group\_num}個の離散的なグローバルメモリアドレス領域を定義するとき，
+  $i$番目のグローバルメモリアドレス領域の先頭アドレスを\texttt{addrs[$i$]}に，
+  $i$番目のグローバルメモリアドレス領域のサイズを\texttt{sizes[$i$]}に指定します．
+  また，$i$番目のグローバルメモリアドレス領域を
+  \texttt{DMI\_group\_read(...)}/\texttt{DMI\_group\_write(...)}によってget/putするときに，
+  \texttt{DMI\_group\_read(...)}/\texttt{DMI\_group\_write(...)}の引数に与えるローカルメモリアドレスを基準として，
+  どのオフセットの位置からデータをget/putするかを\texttt{ptr\_offsets[$i$]}に指定します．
+\item \texttt{int32\_t DMI\_group\_destroy(DMI\_local\_group\_t *group);}：
+  
+  ローカル不透明オブジェクトの\texttt{group}を破棄します．
+\item \texttt{int32\_t DMI\_group\_read(DMI\_group\_group\_t *group, void *in\_ptr, DMI\_local\_status\_t *status);}：
+  
+  ローカル不透明オブジェクト\texttt{group}に定義された離散的なグローバルメモリアドレス領域のデータを
+  ローカルメモリ\texttt{in\_ptr}にreadします．
+  $i$番目のグローバルメモリアドレス領域[\texttt{addrs[$i$]},\texttt{addrs[$i$]+sizes[$i$]})のデータは，
+  [\texttt{in\_ptr[ptr\_offsets[$i$]]},\texttt{in\_ptr[ptr\_offsets[$i$]]+sizes[$i$]})に格納されます．
+\item \texttt{int32\_t DMI\_group\_write(DMI\_local\_group\_t *group, void *out\_ptr, DMI\_local\_status\_t *status);}：
+  
+  ローカル不透明オブジェクト\texttt{group}に定義された離散的なグローバルメモリアドレス領域に対して，
+  ローカルメモリ\texttt{out\_ptr}からデータをwriteします．
+  $i$番目のグローバルメモリアドレス領域[\texttt{addrs[$i$]},\texttt{addrs[$i$]+sizes[$i$]})には，
+  [\texttt{out\_ptr[ptr\_offsets[$i$]]},\texttt{out\_ptr[ptr\_offsets[$i$]]+sizes[$i$]})
+  のデータが書き込まれます．
+\end{itemize}
+
+\subsection{具体例}
+
+\figref{fig:}に示すように，
+8箇所の離散的なグローバルメモリアドレス領域の値を，一括してローカルメモリにget/putする場合を考えます．
+このときは，以下のようにプログラムを記述します：
+\begin{code}
+  
+\end{code}
+各配列の中の値がどう対応しているかを\figref{fig:}と見比べてみてください．
+
+\subsection{補足}
+
+\subsubsection{離散的なread/writeの性能}
+
+離散的なread/writeは，単純に，各グローバルメモリアドレス領域に対してget/putを繰り返すわけではなく，より効率的に動作します．
+\figref{fig:}に示すような8箇所の離散的なグローバルメモリアドレス領域を\texttt{DMI\_group\_init(...)}で定義したとき，
+これらの8箇所の離散的なグローバルメモリアドレス領域が，ページごとに整理されて，その情報が不透明オブジェクト\texttt{group}に書き込まれます．
+つまり，\figref{fig:}の場合には，4つの領域に整理され，
+\texttt{DMI\_group\_read(...)}/\texttt{DMI\_group\_write(...)}が実際のget/put操作を行うときには，
+8回のページフォルトではなく，4回のページフォルトが引き起こされ，
+4個のページフォルト通知だけが各ページのオーナーへと通知されます．
+このように，$x$個のページにまたがる$y$個の離散的なグローバルメモリアドレス領域を指定した場合，
+$y$がいくら大きくとも，内部的には最大$x$回のページフォルトしか発生せず，
+よってキャッシュ管理も最大$x$回しか発生しません．
+
+なお，不透明オブジェクトを生成する\texttt{DMI\_group\_init(...)}と，
+実際にget/putを行う\texttt{DMI\_group\_read(...)}/\texttt{DMI\_group\_write(...)}を分離しているのは，
+領域分割型の並列科学技術計算における反復計算では，
+同一の離散的なグローバルメモリアドレス領域に対して，何度もget/putするためです．
+つまり，\texttt{DMI\_group\_init(...)}で作ったローカル不透明オブジェクトを使って，
+何度もget/putすることができるようにしています．
+
+
+\section{read-write-set}
+
+執筆中．．．
+
+\subsection{ローカル不透明オブジェクトとグローバル不透明オブジェクト}
+
+\chapter{同期}
+
+DMIではpthreadプログラミングとほとんど同様の方法で同期を実現することができます．
+pthreadプログラミングにおいて最も基本的な同期の手段は，排他制御変数（mutex）と条件変数（cond）だと思われるため，
+本節では，まず排他制御変数と条件変数について解説します．
+そのあと，バリア操作について説明し，
+より柔軟で高度な同期を実現するための手段として，
+組み込みのread-modify-writeやユーザ定義のread-modify-writeについて説明します．
+
+\section{排他制御変数}
+
+\subsection{API}
+
+APIは以下のとおりです．
+セマンティクスはpthreadの排他制御変数のAPIと同様のため，pthreadのマニュアルを参照してください：
+\begin{itemize}
+\item \texttt{int32\_t DMI\_mutex\_init(int64\_t mutex\_addr);}：
+  
+  \texttt{mutex\_addr}で示されるグローバルメモリアドレスを，排他制御変数として初期化します．
+  \texttt{mutex\_addr}は\texttt{DMI\_mutex\_t}のサイズを持つグローバルメモリである必要があります．
+\item \texttt{int32\_t DMI\_mutex\_destroy(int64\_t mutex\_addr);}：
+  
+  \texttt{mutex\_addr}で示されるグローバルメモリアドレスに作られている排他制御変数を破棄します．
+\item \texttt{int32\_t DMI\_mutex\_lock(int64\_t mutex\_addr);}：
+  
+  排他制御変数をロックします．
+\item \texttt{int32\_t DMI\_mutex\_unlock(int64\_t mutex\_addr);}：
+  
+  排他制御変数をアンロックします．
+\item \texttt{int32\_t DMI\_mutex\_trylock(int64\_t mutex\_addr, int32\_t *flag\_ptr);}：
+  
+  排他制御変数のロックを試みます．
+  ロックに成功した場合，排他制御変数はロックされ，\texttt{*flag\_ptr}に\texttt{DMI\_TRUE}が格納されます．
+  すでにこの排他制御変数がロックされており，ロックに失敗した場合には，\texttt{*flag\_ptr}に\texttt{DMI\_FALSE}が格納されます．
+\end{itemize}
+
+\subsection{具体例}
+
+1個のカウンタ変数を，複数のDMIスレッドが排他制御しながらインクリメントする処理は以下のように記述できます：
+\begin{code}
+#include "dmi_api.h"
+
+typedef struct targ_t
+{
+  int32_t rank;  /* DMIスレッドのランク */
+  int32_t iter_num;  /* カウンタ変数をカウントする回数 */
+  int64_t mutex_addr;  /* 排他制御変数 */
+  int64_t counter_addr;  /* カウンタ変数 */
+}targ_t;
+
+void DMI_main(int argc, char **argv)
+{
+  DMI_node_t node;
+  DMI_node_t *nodes;
+  DMI_thread_t *threads;
+  targ_t targ;
+  int32_t i, j, value, rank, node_num, thread_num, iter_num;
+  int64_t targ_addr, mutex_addr, counter_addr;
+  
+  if(argc != 4)
+    {
+      fprintf(stderr, "usage : %s node_num thread_num iter_num\n", argv[0]);
+      exit(1);
+    }
+  node_num = atoi(argv[1]);
+  thread_num = atoi(argv[2]);
+  iter_num = atoi(argv[3]);
+  nodes = (DMI_node_t*)malloc(node_num * sizeof(DMI_node_t));
+  threads = (DMI_thread_t*)malloc(node_num * thread_num * sizeof(DMI_thread_t));
+  DMI_mmap(&targ_addr, sizeof(targ_t), node_num * thread_num, NULL);
+  DMI_mmap(&mutex_addr, sizeof(DMI_mutex_t), 1, NULL);  /* 排他制御変数のグローバルメモリを確保 */
+  DMI_mmap(&counter_addr, sizeof(int32_t), 1, NULL);  /* カウンタ変数のグローバルメモリを確保 */
+  DMI_mutex_init(mutex_addr);  /* 排他制御変数を初期化 */
+  value = 0;
+  DMI_write(counter_addr, sizeof(int32_t), &value, DMI_EXCLUSIVE_WRITE, NULL);  /* カウンタ変数の値を0に初期化 */
+  for(i = 0; i < node_num * thread_num; i++)
+    {
+      targ.rank = i;
+      targ.iter_num = iter_num;
+      targ.mutex_addr = mutex_addr;  /* 排他制御変数のグローバルアドレス */
+      targ.counter_addr = counter_addr;  /* カウンタ変数のグローバルアドレス */
+      DMI_write(targ_addr + i * sizeof(targ_t), sizeof(targ_t), &targ, DMI_EXCLUSIVE_WRITE, NULL);
+    }
+  for(i = 0; i < node_num; i++)
+    {
+      DMI_poll(&node);
+      if(node.state == DMI_OPEN)
+        {
+          DMI_welcome(node.dmi_id);
+          nodes[i] = node;
+        }
+    }
+  rank = 0;
+  for(i = 0; i < node_num; i++)
+    {
+      node = nodes[i];
+      for(j = 0; j < thread_num; j++)
+        {
+          DMI_create(&threads[rank], node.dmi_id, targ_addr + rank * sizeof(targ_t), NULL);
+          rank++;
+        }
+    }
+  for(rank = 0; rank < node_num * thread_num; rank++)
+    {
+      DMI_join(threads[rank], NULL, NULL);
+    }
+  DMI_read(targ.counter_addr, sizeof(int32_t), &value, DMI_INVALIDATE_READ, NULL);  /* 最後にカウンタ変数の値を読む */
+  printf("total : %d\n", value);
+  for(i = 0; i < node_num; i++)
+    {
+      DMI_poll(&node);
+      if(node.state == DMI_CLOSE)
+        {
+          DMI_goodbye(node.dmi_id);
+        }
+    }
+  DMI_mutex_destroy(mutex_addr);  /* 排他制御変数を破棄 */
+  DMI_munmap(mutex_addr, NULL);  /* 排他制御変数のグローバルメモリを解放 */
+  DMI_munmap(counter_addr, NULL);  /* カウンタ変数のグローバルメモリを解放 */
+  DMI_munmap(targ_addr, NULL);
+  free(threads);
+  free(nodes);
+  return;
+}
+
+int64_t DMI_thread(int64_t addr)
+{
+  targ_t targ;
+  int32_t i, value;
+  
+  DMI_read(addr, sizeof(targ_t), &targ, DMI_GET_READ, NULL);
+  for(i = 0; i < targ.iter_num; i++)  /* iter_num回だけカウンタ変数をインクリメント */
+    {
+      DMI_mutex_lock(targ.mutex_addr);  /* 排他制御変数をロック */
+      DMI_read(targ.counter_addr, sizeof(int32_t), &value, DMI_GET_READ, NULL);  /* カウンタ変数の値を読む */
+      value++;  /* インクリメント */
+      DMI_write(targ.counter_addr, sizeof(int32_t), &value, DMI_PUT_WRITE, NULL);  /* カウンタ変数の値を書く */
+      DMI_mutex_unlock(targ.mutex_addr);  /* 排他制御変数をアンロック */
+    }
+  return DMI_NULL;
+}
+\end{code}
+
+\section{条件変数}
+
+\subsection{API}
+
+APIは以下のとおりです．
+セマンティクスはpthreadの条件変数のAPIと同様のため，pthreadのマニュアルを参照してください：
+\begin{itemize}
+\item \texttt{int32\_t DMI\_cond\_init(int64\_t cond\_addr);}：
+  
+  \texttt{cond\_addr}で示されるグローバルメモリアドレスを，条件変数として初期化します．
+  \texttt{cond\_addr}は\texttt{DMI\_cond\_t}のサイズを持つグローバルメモリである必要があります．
+\item \texttt{int32\_t DMI\_cond\_destroy(int64\_t cond\_addr);}：
+  
+  条件変数を破棄します．
+\item \texttt{int32\_t DMI\_cond\_wait(int64\_t cond\_addr, int64\_t mutex\_addr);}：
+  
+  排他制御変数と組み合わせて，waitします．
+\item \texttt{int32\_t DMI\_cond\_signal(int64\_t cond\_addr);}：
+  
+  waitしているDMIスレッドのうち，どれか1個のDMIスレッドを起こします．
+\item \texttt{int32\_t DMI\_cond\_broadcast(int64\_t cond\_addr);}：
+  
+  waitしているDMIスレッドすべてを起こします．
+\end{itemize}
+
+\subsection{具体例}
+
+排他制御変数と条件変数を組み合わせることで，
+DMIスレッドすべてでバリア操作を行うプログラムは，以下のように記述できます：
+\begin{code}
+#include "dmi_api.h"
+
+typedef struct targ_t
+{
+  int32_t rank;  /* DMIスレッドのランク */
+  int64_t sync_addr;  /* 排他制御変数と条件変数とカウンタ変数の組み合わせ */
+  int32_t pnum;  /* DMIスレッドの個数 */
+}targ_t;
+
+typedef struct sync_t
+{
+  DMI_mutex_t mutex;  /* 排他制御変数 */
+  DMI_cond_t cond;  /* 条件変数 */
+  int64_t counter;  /* カウンタ変数（その時点でいくつのDMIスレッドがバリア操作に到達しているか） */
+}sync_t;
+
+void barrier(int64_t sync_addr, int32_t pnum);
+
+void DMI_main(int argc, char **argv)
+{
+  DMI_node_t node;
+  DMI_node_t *nodes;
+  DMI_thread_t *threads;
+  targ_t targ;
+  int32_t i, j, value, rank, node_num, thread_num;
+  int64_t targ_addr, sync_addr;
+  
+  if(argc != 3)
+    {
+      fprintf(stderr, "usage : %s node_num thread_num\n", argv[0]);
+      exit(1);
+    }
+  node_num = atoi(argv[1]);
+  thread_num = atoi(argv[2]); 
+  nodes = (DMI_node_t*)malloc(node_num * sizeof(DMI_node_t));
+  threads = (DMI_thread_t*)malloc(node_num * thread_num * sizeof(DMI_thread_t));
+  DMI_mmap(&targ_addr, sizeof(targ_t), node_num * thread_num, NULL);
+  DMI_mmap(&sync_addr, sizeof(sync_t), 1, NULL);  /* バリア操作のためのグローバルメモリを確保 */
+  DMI_mutex_init((int64_t)&(((sync_t*)sync_addr)->mutex));  /* 排他制御変数を初期化 */
+  DMI_cond_init((int64_t)&(((sync_t*)sync_addr)->cond));  /* 条件変数を初期化 */
+  value = 0;
+  DMI_write((int64_t)&(((sync_t*)sync_addr)->counter), sizeof(int32_t), &value, DMI_EXCLUSIVE_WRITE, NULL);  /* カウンタ変数の値を0に初期化 */
+  for(i = 0; i < node_num * thread_num; i++)
+    {
+      targ.rank = i;
+      targ.sync_addr = sync_addr;  /* バリア操作のためのグローバルアドレス */
+      targ.pnum = node_num * thread_num;
+      DMI_write(targ_addr + i * sizeof(targ_t), sizeof(targ_t), &targ, DMI_EXCLUSIVE_WRITE, NULL);
+    }
+  for(i = 0; i < node_num; i++)
+    {
+      DMI_poll(&node);
+      if(node.state == DMI_OPEN)
+        {
+          DMI_welcome(node.dmi_id);
+          nodes[i] = node;
+        }
+    }
+  rank = 0;
+  for(i = 0; i < node_num; i++)
+    {
+      node = nodes[i];
+      for(j = 0; j < thread_num; j++)
+        {
+          DMI_create(&threads[rank], node.dmi_id, targ_addr + rank * sizeof(targ_t), NULL);
+          rank++;
+        }
+    }
+  for(rank = 0; rank < node_num * thread_num; rank++)
+    {
+      DMI_join(threads[rank], NULL, NULL);
+    }
+  for(i = 0; i < node_num; i++)
+    {
+      DMI_poll(&node);
+      if(node.state == DMI_CLOSE)
+        {
+          DMI_goodbye(node.dmi_id);
+        }
+    }
+  DMI_cond_destroy((int64_t)&(((sync_t*)sync_addr)->cond));  /* 条件変数を破棄 */
+  DMI_mutex_destroy((int64_t)&(((sync_t*)sync_addr)->mutex));  /* 排他制御変数を破棄 */
+  DMI_munmap(sync_addr, NULL);  /* バリア操作のためのグローバルメモリを解放 */
+  DMI_munmap(targ_addr, NULL);
+  free(threads);
+  free(nodes);
+  return;
+}
+
+int64_t DMI_thread(int64_t addr)
+{
+  targ_t targ;
+  int32_t i, value;
+  
+  DMI_read(addr, sizeof(targ_t), &targ, DMI_GET_READ, NULL);
+  for(i = 0; i < 20; i++)  /* バリア操作を20回繰り返す */
+    {
+      barrier(targ.sync_addr, targ.pnum);  /* バリア操作 */
+    }
+  return DMI_NULL;
+}
+
+void barrier(int64_t sync_addr, int32_t pnum)
+{
+  int value;
+  
+  DMI_mutex_lock((int64_t)&(((sync_t*)sync_addr)->mutex));  /* 排他制御変数をロック */
+  DMI_read((int64_t)&(((sync_t*)sync_addr)->counter), sizeof(int32_t), &value, DMI_GET_READ, NULL);  /* カウンタ変数の値を読む */
+  value++;  /* カウンタ変数をインクリメント */
+  if(value < pnum)  /* 「最後」のDMIスレッドでなければ */
+    {
+      DMI_write((int64_t)&(((sync_t*)sync_addr)->counter), sizeof(int32_t), &value, DMI_PUT_WRITE, NULL);  /* カウンタ変数の値を書く */
+      DMI_cond_wait((int64_t)&(((sync_t*)sync_addr)->cond), (int64_t)&(((sync_t*)sync_addr)->mutex));  /* 条件変数のwait */
+    }
+  else  /* 「最後」のDMIスレッドでならば */
+    {
+      value = 0;
+      DMI_write((int64_t)&(((sync_t*)sync_addr)->counter), sizeof(int32_t), &value, DMI_PUT_WRITE, NULL);  /* カウンタ変数の値を書く */
+      DMI_cond_broadcast((int64_t)&(((sync_t*)sync_addr)->cond));  /* 条件変数のbroadcast */
+    }
+  DMI_mutex_unlock((int64_t)&(((sync_t*)sync_addr)->mutex));  /* 排他制御変数をアンロック */
+  return;
+}
+\end{code}
+
+上記のDMIプログラムを実行すると
+，
+
+\section{バリア操作}
+
+\subsection{API}
+
+\ref{sec:}で示したように，排他制御変数と条件変数を組み合わせることでバリア操作を実現できますが，
+排他制御変数と条件変数を利用するバリア操作は遅いです．
+これは共有メモリ環境上のpthreadプログラミングにもいえることで，
+本当に高性能なバリア操作を実現する場合，より低レベルの同期プリミティブやビジーウェイトを組み合わせる必要があります．
+そこで，DMIでは，より高性能なバリア操作をAPIとしてまとめて提供しています．
+このバリア操作は，単にバリアを行うだけでなく，おまけの機能としてdouble型の変数の加算操作も行えるようになっています．
+
+APIは以下のとおりです．
+ローカル不透明オブジェクトとグローバル不透明オブジェクトに関しては\ref{sec:}節を参照してください：
+\begin{itemize}
+\item \texttt{int32\_t DMI\_barrier\_init(int64\_t barrier\_addr);}：
+  
+  \texttt{barrier\_addr}で示されるグローバルメモリアドレスを，バリア操作のためのグローバル不透明オブジェクトとして初期化します．
+  \texttt{barrier\_addr}は\texttt{DMI\_barrier\_t}のサイズを持つグローバルメモリである必要があります．
+\item \texttt{int32\_t DMI\_barrier\_destroy(int64\_t barrier\_addr);}：
+  
+  バリア操作のためのグローバル不透明オブジェクトを破棄します．
+\item \texttt{int32\_t DMI\_local\_barrier\_init(DMI\_local\_barrier\_t *barrier, int64\_t barrier\_addr);}：
+  
+  バリア操作のためのグローバル不透明オブジェクト\texttt{barrier\_addr}を与えることで，
+  実際に各DMIスレッドがバリア操作に使うためのローカル不透明オブジェクト\texttt{barrier}を初期化します．
+\item \texttt{int32\_t DMI\_local\_barrier\_destroy(DMI\_local\_barrier\_t *barrier);}：
+  
+  ローカル不透明オブジェクト\texttt{barrier}を破棄します．
+\item \texttt{int32\_t DMI\_local\_barrier\_allreduce(DMI\_local\_barrier\_t *barrier, double sub\_sum, double *sum\_ptr, int32\_t pnum);}：
+  
+  ローカル不透明オブジェクト\texttt{barrier}を利用して，
+  \texttt{pnum}個のDMIスレッドの間でAllreduce操作（つまりバリア操作）を行います．
+  各DMIスレッドの\texttt{DMI\_local\_barrier\_allreduce(...)}は，
+  全DMIスレッドが\texttt{DMI\_local\_barrier\_allreduce(...)}を呼び出した時点で，
+  全DMIスレッドが与えた\texttt{sub\_sum}の総和を\texttt{sum\_ptr}に格納したうえで返ります．
+  これにより，double型の値のAllreduce操作（つまりバリア操作）を実現できます．
+  バリア操作を行う際には，全DMIスレッドが\texttt{pnum}として同一の値を指定しなければなりません．
+\end{itemize}
+
+\subsection{具体例}
+
+\ref{sec:}節のプログラムを，
+このバリア操作のAPIを使って記述すると以下のようになります．
+排他制御変数と条件変数を使うよりもこちらの方が高速です：
+\begin{code}
+#include "dmi_api.h"
+
+typedef struct targ_t
+{
+  int32_t rank;  /* DMIスレッドのランク */
+  int64_t barrier_addr;  /* グローバル不透明オブジェクト */
+  int32_t pnum;  /* DMIスレッドの個数 */
+}targ_t;
+
+void DMI_main(int argc, char **argv)
+{
+  DMI_node_t node;
+  DMI_node_t *nodes;
+  DMI_thread_t *threads;
+  targ_t targ;
+  int32_t i, j, value, rank, node_num, thread_num;
+  int64_t targ_addr, barrier_addr;
+  
+  if(argc != 3)
+    {
+      fprintf(stderr, "usage : %s node_num thread_num\n", argv[0]);
+      exit(1);
+    }
+  node_num = atoi(argv[1]);
+  thread_num = atoi(argv[2]);
+  nodes = (DMI_node_t*)malloc(node_num * sizeof(DMI_node_t));
+  threads = (DMI_thread_t*)malloc(node_num * thread_num * sizeof(DMI_thread_t));
+  DMI_mmap(&targ_addr, sizeof(targ_t), node_num * thread_num, NULL);
+  DMI_mmap(&barrier_addr, sizeof(barrier_t), 1, NULL);  /* グローバル不透明オブジェクトのグローバルメモリを確保 */
+  DMI_barrier_init(barrier_addr);  /* グローバル不透明オブジェクトの初期化 */
+  for(i = 0; i < node_num * thread_num; i++)
+    {
+      targ.rank = i;
+      targ.barrier_addr = barrier_addr;  /* グローバル不透明オブジェクトのグローバルアドレス */
+      targ.pnum = node_num * thread_num;
+      DMI_write(targ_addr + i * sizeof(targ_t), sizeof(targ_t), &targ, DMI_EXCLUSIVE_WRITE, NULL);
+    }
+  for(i = 0; i < node_num; i++)
+    {
+      DMI_poll(&node);
+      if(node.state == DMI_OPEN)
+        {
+          DMI_welcome(node.dmi_id);
+          nodes[i] = node;
+        }
+    }
+  rank = 0;
+  for(i = 0; i < node_num; i++)
+    {
+      node = nodes[i];
+      for(j = 0; j < thread_num; j++)
+        {
+          DMI_create(&threads[rank], node.dmi_id, targ_addr + rank * sizeof(targ_t), NULL);
+          rank++;
+        }
+    }
+  for(rank = 0; rank < node_num * thread_num; rank++)
+    {
+      DMI_join(threads[rank], NULL, NULL);
+    }
+  for(i = 0; i < node_num; i++)
+    {
+      DMI_poll(&node);
+      if(node.state == DMI_CLOSE)
+        {
+          DMI_goodbye(node.dmi_id);
+        }
+    }
+  DMI_barrier_destroy(barrier_addr);  /* グローバル不透明オブジェクトの破棄 */
+  DMI_munmap(barrier_addr, NULL);
+  DMI_munmap(targ_addr, NULL);
+  free(threads);
+  free(nodes);
+  return;
+}
+
+int64_t DMI_thread(int64_t addr)
+{
+  targ_t targ;
+  int32_t i, value;
+  double dummy;
+  DMI_local_barrier_t local_barrier;  /* ローカル不透明オブジェクト */
+  
+  DMI_read(addr, sizeof(targ_t), &targ, DMI_GET_READ, NULL);
+  DMI_local_barrier_init(&local_barrier, targ.barrier_addr);  /* ローカル不透明オブジェクトの初期化 */
+  for(i = 0; i < 20; i++)
+    {
+      DMI_local_barrier_allreduce(&local_barrier, 0, &dummy, targ.pnum);  /* バリア操作 */
+    }
+  DMI_local_barrier_destroy(&local_barrier);  /* ローカル不透明オブジェクトの破棄 */
+  return DMI_NULL;
+}
+\end{code}
+
+\subsection{補足}
+
+\subsubsection{\texttt{DMI\_local\_barrier\_allreduce(...)}が返るタイミング}
+
+\texttt{DMI\_local\_barrier\_allreduce(...)}が返るタイミングを正確に説明します．
+あるDMIスレッド$t$が，グローバル不透明オブジェクト\texttt{barrier\_addr}を基に生成された
+ローカル不透明オブジェクト\texttt{barrier}を利用して\texttt{DMI\_local\_barrier\_allreduce(...)}を呼び出すとします．
+一般には，多数のDMIスレッドがこのグローバル不透明オブジェクト\texttt{barrier\_addr}を基にローカル不透明オブジェクトを生成しています．
+このとき，DMIスレッド$t$の\texttt{DMI\_local\_barrier\_allreduce(...)}が返るのは，
+同一のグローバル不透明オブジェクト\texttt{barrier\_addr}から生成された
+ローカル不透明オブジェクトを利用した\texttt{DMI\_local\_barrier\_allreduce(...)}が合計\texttt{pnum}回呼び出された時点です．
+
+\section{スレッドスケジューリング}
+
+\subsection{API}
+
+DMIスレッドを眠らせたり，特定のスレッドを起こしたりすることができます．
+このAPIを使うと，より細粒度な同期を実現できます．
+APIは以下のとおりです：
+\begin{itemize}
+\item \texttt{int32\_t DMI\_suspend(void);}：
+  
+  この\texttt{DMI\_suspend(...)}を呼び出したDMIスレッドを眠らせます．
+  \texttt{DMI\_wake(...)}によって起こされるまで，このDMIスレッドは眠り続けます．
+\item \texttt{int32\_t DMI\_wake(DMI\_thread\_t dmi\_thread, DMI\_local\_status\_t *status);}：
+  
+  スレッドハンドル\texttt{dmi\_thread}で指定されるDMIスレッドを起こします．
+  \texttt{status}を指定することで非同期操作にできます．
+\end{itemize}
+
+
+
+\section{組み込みのread-modify-write}
+
+\subsection{read-modify-write}
+
+\subsubsection{read-modify-write}
+
+本節では，read-modify-writeとは何かを説明するために，
+DMIの話を離れて，通常のCPUと共有メモリ環境に関する話をします．
+
+まず，そもそも共有メモリ環境上の排他制御変数（mutex）のロック操作がどのように実装されているかを考えてみます．
+おそらく，現在その排他制御変数をロックしているかどうかを管理するための変数\texttt{flag}があって，
+\begin{code}
+void mutex_lock(mutex_t *mutex)
+{
+  while(1)
+    {
+      while(mutex->flag == 1);  /* ロックが解除されるまでビジーウェイト */
+      if(mutex->flag == 0)  /* ロックされていないならば */
+        {
+          mutex->flag = 1;  /* ロックする */
+          return;
+        }
+    }
+  return;
+}
+\end{code}
+のような実装になっているのではないかと考えるわけですが，これでは排他制御は失敗します．
+たとえば，あるスレッド$t_1$が\texttt{mutex->flag == 0}であることを確認し，
+\texttt{mutex->flag}を\texttt{1}に書き換えてロックを成功させたとします．
+このとき，スレッド$t_1$が\texttt{mutex->flag == 0}であることを確認してから
+\texttt{mutex->flag}を\texttt{1}に書き換えるまでの間は
+\texttt{mutex->flag}の値はまだ\texttt{0}のままです．
+よって，この間に，別のスレッド$t_2$が\texttt{mutex->flag == 0}であることを確認して，
+スレッド$t_2$も\texttt{mutex->flag}を\texttt{1}に書き換えてロックを成功させてしまう可能性があります．
+つまり，複数のスレッドがロックを成功させたと思ってしまう可能性があり，これでは排他制御になっていません．
+この問題の根源は，CPUが各read/writeの単位でしかアトミックな実行を保証してくれない（と今は仮定している）ために，
+\texttt{mutex->flag == 0}であることを確認してから
+\texttt{mutex->flag}を\texttt{1}に書き換えるまでに「間」が存在してしまうことに起因しています．
+そこで，通常のCPUでは，（1）あるアドレスの値を読み出し，（2）その値に対して何らかの操作を行い，（3）そのアドレスに何らかの値を書き込む，
+という操作をアトミックに実行するための命令をいくつか提供しています
+\footnote{実は，非常にトリッキーなアルゴリズムを使うと，
+CPUが各read/writeの単位でしかアトミックな実行を保証してくれないという仮定の下でも排他制御を実現することはできますが，
+read-modify-writeを使う場合の排他制御と比較すると効率は悪いです．}．
+これがread-modify-writeと呼ばれる命令群であり，
+代表的なread-modify-writeとしては，compare-and-swap，fetch-and-store，test-and-setなどがあります．
+これらのread-modify-writeを使うと，
+今説明したような排他制御変数（mutex）などを，read-modify-writeがない場合と比較して簡単かつ効率的に実装できます．
+また，データ構造によっては，そのデータ構造に対するread/writeを排他制御変数（mutex）で排他制御するのではなく，
+read-modify-writeを上手に使うことでより効率的な排他制御が行うことができます．
+詳細が知りたい方は，lock-free，wait-freeのキーワードで調べてください．
+以下では，compare-and-swapとfetch-and-storeが具体的にどのような命令なのかを説明します．
+
+\subsubsection{compare-and-swap}
+
+compare-and-swapは次の関数をアトミックに実行する命令です：
+\begin{code}
+int compare_and_swap(int *p, int x, int y)
+{
+  if(*p == x)
+    {
+      *p = y;
+      return 1;
+    }
+  return 0;
+}
+\end{code}
+つまり，指定したメモリアドレス\texttt{p}の値が\texttt{x}と等しければ，
+メモリアドレス\texttt{p}の値を\texttt{y}に書き換えて，成功を表す1を返します．
+指定したメモリアドレス\texttt{p}の値が\texttt{x}と等しくなければ，何も行わずに0を返します．
+以上の操作をアトミックに実行します．
+
+たとえば，上記で例に挙げた排他制御変数のロック操作は，compare-and-swapを使うことで以下のように実装できます：
+\begin{code}
+void mutex_lock(mutex_t *mutex)
+{
+  while(1)
+    {
+      while(mutex->flag == 1);  /* ロックが解除されるまでビジーウェイト */
+      int ret = compare_and_swap(&mutex->flag, 0, 1);
+      if(ret == 1) return;  /* ロック成功 */
+    }
+  return;
+}
+\end{code}
+
+
+\subsubsection{fetch-and-store}
+
+fetch-and-storeは次の関数をアトミックに実行する命令です：
+\begin{code}
+void fetch_and_store(int *p, int in, int *out)
+{
+  *out = *p;
+  *p = in;
+  return;
+}
+\end{code}
+つまり，指定したメモリアドレス\texttt{p}のその時点での値を\texttt{out}に格納したあとで，
+メモリアドレス\texttt{p}の値を\texttt{in}の値に書き換えるという作業をアトミックに行います．
+
+\subsection{API}
+
+DMIの話に戻ります．
+DMIでは，compare-and-swapとfetch-and-storeを行うための以下のようなAPIを提供しています：
+\begin{itemize}
+\item \texttt{int32\_t DMI\_cas(int64\_t addr, int64\_t size, void *cmp\_ptr, void *swap\_ptr, int8\_t *flag\_ptr, int8\_t mode, DMI\_local\_status\_t *status);}：
+  
+  compare-and-swapを行います．
+  グローバルメモリアドレス\texttt{addr}から\texttt{size}バイトのデータを，
+  ローカルメモリアドレス\texttt{cmp\_ptr}から\texttt{size}バイトのデータと比較し，
+  完全に一致していれば，グローバルメモリアドレス\texttt{addr}から\texttt{size}バイトのデータを
+  ローカルメモリアドレス\texttt{cmp\_ptr}から\texttt{size}バイトのデータに置き換えて，
+  \texttt{flag\_ptr}に\texttt{DMI\_TRUE}を格納してから返ります．
+  1バイトでも一致していなければ，グローバルメモリには変更を行わず，\texttt{flag\_ptr}に\texttt{DMI\_FALSE}を格納してから返ります．
+  以上の操作をアトミックに行います．
+  \texttt{mode}としては，\texttt{DMI\_EXCLUSIVE\_ATOMIC}，\texttt{DMI\_PUT\_ATOMIC}の2種類のモードを指定できます．
+  なお，グローバルメモリアドレス領域[\texttt{addr},\texttt{addr+size})は，
+  必ず1個のページ内に収まっている必要があります．
+\item \texttt{int32\_t DMI\_fas(int64\_t addr, int64\_t size, void *out\_ptr, void *in\_ptr, int8\_t mode, DMI\_local\_status\_t *status);}：
+  
+  fetch-and-storeを行います．
+  その時点におけるグローバルメモリアドレス\texttt{addr}から\texttt{size}バイトのデータを，
+  ローカルメモリアドレス\texttt{in\_ptr}に格納したあとで，
+  グローバルメモリアドレス\texttt{addr}から\texttt{size}バイトのデータを
+  ローカルメモリアドレス\texttt{cmp\_ptr}から\texttt{size}バイトのデータに置き換えます．
+  以上の操作をアトミックに行います．
+  \texttt{mode}としては，\texttt{DMI\_EXCLUSIVE\_ATOMIC}，\texttt{DMI\_PUT\_ATOMIC}の2種類のモードを指定できます．
+  なお，グローバルメモリアドレス領域[\texttt{addr},\texttt{addr+size})は，
+  必ず1個のページ内に収まっている必要があります．
+\end{itemize}
+
+\texttt{DMI\_EXCLUSIVE\_ATOMIC}，\texttt{DMI\_PUT\_ATOMIC}の各モードは，
+このread-modify-writeに伴うキャッシュ管理を明示的に指示するためのものです．
+キャッシュ管理の動作は，それぞれ，\texttt{DMI\_EXCLUSIVE\_WRITE}，\texttt{DMI\_PUT\_WRITE}と同様です．
+
+\section{ユーザ定義のread-modify-write}
+
+\subsection{概要}
+
+\texttt{DMI\_cas(...)}と\texttt{DMI\_fas(...)}を使えば，
+compare-and-swapとfetch-and-storeを実現できますが，
+逆に言えば，compare-and-swapとfetch-and-storeしか実現できません．
+そこでDMIでは，組み込みのcompare-and-swapとfetch-and-storeに限らず，
+プログラマが任意のread-modify-writeを定義するための機能を提供しています．
+
+当然，多様なread-modify-writeが提供されていればいるほど，意図する同期を効率的に実装することができます．
+たとえば，カウンタ変数\texttt{counter}を複数のDMIスレッドでインクリメントする処理を考えます．
+read-modify-writeとしてcompare-and-swapとfetch-and-storeしか使えないのであれば，
+これらのread-modify-writeや通常のread/writeなどを組み合わせることで，
+カウンタ変数\texttt{counter}のインクリメントをアトミックに実現する必要があります．
+排他制御変数を使って排他する場合でも，結局のところ内部的には，
+read-modify-writeや通常のread/writeが組み合わされている点に注意してください．
+これに対して，仮に「カウンタ変数\texttt{counter}をアトミックにインクリメントする」というread-modify-writeを
+プログラマが新たに作ることができれば，そのread-modify-write一命令だけで
+カウンタ変数\texttt{counter}のインクリメントを実現できるため，高速です．
+
+このように，プログラマが任意のread-modify-writeを作り出すことで，
+意図する同期をより高速に実装することができます．
+
+\subsection{API}
+
+\subsubsection{簡単化した説明}
+
+DMIにおけるユーザ定義のread-modify-writeのAPIは，
+プログラマに最大限の柔軟性を提供しようとした結果かなり複雑なものになっているので，順を追って解説します．
+
+まず，プログラマは以下のようなプロトタイプを持った\texttt{DMI\_function(...)}という名前の関数を定義し，
+この\texttt{DMI\_function(...)}の中に，read-modify-writeの命令を記述します．
+関数名は必ず\texttt{DMI\_function(...)}である必要があります：
+\begin{itemize}
+\item \texttt{void DMI\_function(void *page\_ptr, int64\_t size, void *out1\_ptr, int64\_t out1\_size, void *out2\_ptr, int64\_t out2\_size, void *in\_ptr, int64\_t in\_size, int8\_t tag) \{ ... \} }
+\end{itemize}
+
+そのうえで，\texttt{DMI\_atomic(...)}を呼び出すと，
+\texttt{DMI\_atomic(...)}に与えた引数が\texttt{DMI\_function(...)}に渡されて実行され，
+ユーザ定義のread-modify-writeが実行されます．
+\texttt{DMI\_atomic(...)}のAPIは以下のとおりです：
+\begin{itemize}
+\item \texttt{int32\_t DMI\_atomic(int64\_t addr, int64\_t size, void *out1\_ptr, int64\_t out1\_size, void *out2\_ptr, int64\_t out2\_size, void *in\_ptr, int64\_t in\_size, int8\_t tag, int8\_t mode, status\_t *status);}
+\end{itemize}
+
+要するに，概略としては，プログラマが\texttt{DMI\_function(...)}という関数の中に任意のread-modify-writeを記述したうえで，
+\texttt{DMI\_atomic(...)}を呼び出すと，
+\texttt{DMI\_atomic(...)}に与えた引数が\texttt{DMI\_function(...)}に渡されて実行され，
+意図したread-modify-writeを実行できるという仕組みです．
+特に\texttt{DMI\_atomic(...)}に渡す\texttt{tag}の値がそのまま\texttt{DMI\_function(...)}の\texttt{tag}に渡されるので，
+\texttt{DMi\_function(...)}の中ではこの\texttt{tag}の値に基づいて，
+どのread-modify-writeを実行するかを振り分けることができます．
+よって，プログラムの概形は以下のようになります：
+\begin{code}
+void DMI_function(void *page_ptr, int64_t size, void *out1_ptr, int64_t out1_size, void *out2_ptr, int64_t out2_size, void *in_ptr, int64_t in_size, int8_t tag)
+{
+  switch(tag)
+    {
+    case 12345:
+      ...; /* read-modify-write その1 */
+      break;
+    case 12346:
+      ...; /* read-modify-write その2 */
+      break;
+    case 12347:
+      ...; /* read-modify-write その3 */
+      break;
+    ...;
+    }
+  return;
+}
+
+int64_t DMI_thread(int64_t addr)
+{
+  ...;
+  DMI_atomic(addr, size, out1_ptr, out1_size, out2_ptr, out2_size, in_ptr, in_size, tag, mode, status);
+  ...;
+}
+\end{code}
+
+\subsubsection{正確な説明}
+
+詳しいセマンティクスについて説明します．
+\texttt{DMI\_atomic(...)}に渡す引数と，
+それによって呼び出された\texttt{DMI\_function(...)}に渡される引数の関係は以下のように決まります：
+\begin{itemize}
+\item \texttt{DMI\_atomic(...)}に渡す\texttt{addr}はグローバルメモリアドレスです．
+  グローバルメモリアドレス領域[\texttt{addr},\texttt{addr+size})は1ページに収まる領域でなければなりません．
+  このとき，グローバルメモリアドレス領域[\texttt{addr},\texttt{addr+size})に対応するページの実体のメモリアドレスが，
+  \texttt{DMI\_function(...)}の引数\texttt{page\_ptr}として渡されます．
+  より実装レベルの表現で言えば，\texttt{DMI\_function(...)}は，
+  グローバルメモリアドレス領域[\texttt{addr},\texttt{addr+size})が属するページのオーナーのDMIプロセスで呼び出されます．
+  そして，オーナーのメモリプールの中でそのグローバルメモリアドレス領域を格納しているメモリアドレスが\texttt{page\_ptr}に渡されます．
+\item \texttt{DMI\_atomic(...)}に渡す\texttt{out1\_ptr}と\texttt{out2\_ptr}はローカルメモリアドレスです．
+  \texttt{DMI\_atomic(...)}に渡した\texttt{out1\_ptr}から\texttt{out1\_size}バイトのデータと
+  \texttt{out2\_ptr}から\texttt{out2\_size}バイトのデータが，
+  それぞれ，\texttt{DMI\_function(...)}の\texttt{out1\_ptr}と\texttt{out2\_ptr}にそのまま渡されます．
+  また，\texttt{DMI\_function(...)}の\texttt{out1\_size}と\texttt{out2\_size}には，
+  それぞれ，\texttt{DMI\_atomic(...)}に渡した\texttt{out1\_size}と\texttt{out2\_size}が渡されます．
+\item \texttt{DMI\_atomic(...)}に渡した\texttt{tag}の値は，\texttt{DMI\_function(...)}の\texttt{tag}に渡されます．
+\item \texttt{DMI\_atomic(...)}に渡した\texttt{in\_size}の値は，
+  \texttt{DMI\_function(...)}の\texttt{in\_size}に渡されます．
+  また，\texttt{DMI\_function(...)}に渡される\texttt{in\_ptr}は\texttt{in\_size}バイトのサイズのローカルメモリであり，
+  初期的には何もデータが格納されているわけではなく，\texttt{DMI\_function(...)}が任意のデータを格納するために利用します．
+  すると，\texttt{DMI\_function(...)}が終了したときに，
+  \texttt{DMI\_function(...)}の\texttt{in\_ptr}から\texttt{in\_size}バイトのデータが，
+  この\texttt{DMI\_function(...)}を呼び出した\texttt{DMI\_atomic(...)}の\texttt{in\_ptr}にそのまま渡されます．
+  つまり，この\texttt{in\_ptr}は\texttt{DMI\_function(...)}の「返り値」です．
+  よって，\texttt{DMI\_atomic(...)}に渡す\texttt{in\_ptr}は，
+  少なくとも\texttt{in\_size}バイトのサイズを持ったローカルメモリである必要があります．
+\end{itemize}
+
+以上の関係を\figref{fig:}にまとめます．
+要するに，ポイントをまとめると以下のとおりです：
+\begin{itemize}
+\item \texttt{out1\_ptr}と\texttt{out2\_ptr}が，
+  \texttt{DMI\_atomic(...)}から\texttt{DMI\_function(...)}への入力データです．
+\item \texttt{in\_ptr}が，
+  \texttt{DMI\_function(...)}から\texttt{DMI\_atomic(...)}への出力データ（「返り値」）です．
+\item \texttt{DMI\_function(...)}の中では，
+  \texttt{tag}の値によってどのread-modify-writeを行うかを振り分けることができます．
+\end{itemize}
+
+\subsection{具体例}
+
+\subsubsection{カウンタ変数をアトミックにインクリメントする}
+
+\ref{sec:}節で例に挙げた，排他制御変数と条件変数を使ってカウンタ変数\texttt{counter}をインクリメントするプログラムは，
+ユーザ定義のread-modify-writeを使うと以下のように記述できます．
+こちらの方が排他制御変数や条件変数を使うよりはるかに高速です：
+\begin{code}
+  
+\end{code}
+
+\subsubsection{Allreduce}
+
+各DMIスレッドが保持しているint型の整数の総和を求めるプログラムは，
+ユーザ定義のread-modify-writeを使って以下のように記述できます：
+\begin{code}
+  
+\end{code}
+
+***説明***
+
+\subsection{補足}
+
+\subsubsection{DMIにおける同期の各種手段の性能比較}
+
+さまざまな同期の手段を解説してくる中で，どの手段がどの手段よりも高速であるというようなことを述べてきました．
+ここでは，ここまでで解説した同期の各手段の性能の関係をまとめておきます．
+
+当然，各手段の性能は，その手段が，どれだけ「プリミティブ」に実装されているかで決定されます．
+DMIにおける同期の各手段の関係は\figref{fig:}のようになっています．
+\figref{fig:}からわかるように，DMIの同期において最もプリミティブな同期の手段は，
+ユーザ定義のread-modify-write，\texttt{DMI\_suspend(...)}，\texttt{DMI\_wake(...)}の3つです．
+そして，ユーザ定義のread-modify-writeの特殊な場合として，compare-and-swapとfetch-and-storeが実装されています．
+さらに，これらのcompare-and-swapとfetch-and-store，
+\texttt{DMI\_suspend(...)}，\texttt{DMI\_wake(...)}，\texttt{DMI\_read(...)}，\texttt{DMI\_write(...)}を
+組み合わせることで排他制御変数が実装されています．
+一方，バリア操作のAPIは，ユーザ定義のread-modify-write，
+\texttt{DMI\_read(...)}，\texttt{DMI\_write(...)}だけから実装されています．
+このようなDMIにおける実装上の階層関係から，
+バリア操作を行うためには排他制御変数と条件変数を組み合わせるよりも，
+DMIのバリア操作のAPIを利用する方が高速なことがわかります．
+また，DMIプログラミングにおいて何らかの同期を実現する場合に，
+排他制御変数と条件変数を使って同期を実現するよりも，
+ユーザ定義のread-modify-writeを使って同期を実現する方が高速なこともわかります．
+
+一般に，分散アプリケーションでは同期は必須であり，同期がボトルネックになることが多々あります．
+DMIプログラミングで同期を実現する場合，
+プログラミングの容易さを重視する場合には排他制御変数と条件変数を使えば良いですが，
+\textbf{性能を重視する場合にはユーザ定義のread-modify-writeの機能を利用する}ことが重要です．
+
+\chapter{サンプルプログラム}
+
+\section{典型的なDMIプログラミング}
+
+\subsection{DMIプロセスが動的に参加/脱退するプログラム}
+
+\subsection{SPMD型のプログラム}
+
+\subsection{pthreadプログラムからDMIプログラムへの変換}
+
+\section{サンプルプログラムの実行方法}
+
+
+\chapter{API一覧}
+
+
+
+
+\end{document}

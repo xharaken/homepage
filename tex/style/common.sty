@@ -1,0 +1,169 @@
+% 
+% common.sty @ 2009/11/22
+% 
+
+%%% usepackage
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,bm,textcomp,psfrag,type1cm,color,
+  colortbl,fancybox,ascmac,longtable,colortbl,booktabs,pifont,
+  textcomp,lmodern,multicol}
+\usepackage{eclbkbox}
+\usepackage[dvipdfm]{graphicx}
+\usepackage[scaled]{helvet}
+
+%%% definecolor
+\definecolor{white}{gray}{1.00}
+\definecolor{lightgray}{gray}{0.75}
+\definecolor{middlegray}{gray}{0.65}
+\definecolor{deepgray}{gray}{0.25}
+\definecolor{shalloworange}{cmyk}{0,0.1,0.4,0}
+\definecolor{middleorange}{cmyk}{0,0.35,0.85,0}
+\definecolor{deeporange}{cmyk}{0,0.75,1,0}
+\definecolor{pink}{cmyk}{0,1,0.60,0}
+\definecolor{middlegreen}{cmyk}{0.4,0,0.4,0}
+\definecolor{deepgreen}{cmyk}{1,0,0.5,0.2}
+\definecolor{shallowblue}{cmyk}{0.1,0,0,0}
+\definecolor{middleblue}{cmyk}{0.4,0.1,0,0}
+\definecolor{deepblue}{cmyk}{1,1,0,0}
+\definecolor{red}{cmyk}{0,1,1,0}
+
+%%% decoration
+\def\red#1{{\color{red}#1}}
+\def\bfred#1{{\color{red}\textbf{#1}}}
+\def\blue#1{{\color{deepblue}#1}}
+
+%%% others
+\sloppy
+
+\setlength{\columnseprule}{0.2pt}
+
+
+%%% font
+\renewcommand{\ttdefault}{pcr}
+\def\pcr{\fontfamily{pcr}\selectfont}
+\def\pag{\fontfamily{pag}\selectfont}
+\def\cmr{\fontfamily{cmr}\selectfont}
+\def\phv{\fontfamily{phv}\selectfont}
+
+%%% today
+\def\mytoday{%
+  \cmr%
+  \ifnum \number\year=2007%
+  \texttwooldstyle\textzerooldstyle\textzerooldstyle\textsevenoldstyle%
+  \fi%
+  \ifnum \number\year=2008%
+  \texttwooldstyle\textzerooldstyle\textzerooldstyle\texteightoldstyle%
+  \fi%
+  \ifnum \number\year=2009%
+  \texttwooldstyle\textzerooldstyle\textzerooldstyle\textnineoldstyle%
+  \fi%
+  \ifnum \number\year=2010%
+  \texttwooldstyle\textzerooldstyle\textoneoldstyle\textzerooldstyle%
+  \fi%
+  .%
+  \ifcase\month\or%
+  \textoneoldstyle\or%
+  \texttwooldstyle\or%
+  \textthreeoldstyle\or%
+  \textfouroldstyle\or%
+  \textfiveoldstyle\or%
+  \textsixoldstyle\or%
+  \textsevenoldstyle\or%
+  \texteightoldstyle\or%
+  \textnineoldstyle\or%
+  \textoneoldstyle\textzerooldstyle\or%
+  \textoneoldstyle\textoneoldstyle\or%
+  \textoneoldstyle\texttwooldstyle%
+  \fi%
+  .%
+  \ifcase\day\or%
+  \textoneoldstyle\or%
+  \texttwooldstyle\or%
+  \textthreeoldstyle\or%
+  \textfouroldstyle\or%
+  \textfiveoldstyle\or%
+  \textsixoldstyle\or%
+  \textsevenoldstyle\or%
+  \texteightoldstyle\or%
+  \textnineoldstyle\or%
+  \textoneoldstyle\textzerooldstyle\or%
+  \textoneoldstyle\textoneoldstyle\or%
+  \textoneoldstyle\texttwooldstyle\or%
+  \textoneoldstyle\textthreeoldstyle\or%
+  \textoneoldstyle\textfouroldstyle\or%
+  \textoneoldstyle\textfiveoldstyle\or%
+  \textoneoldstyle\textsixoldstyle\or%
+  \textoneoldstyle\textsevenoldstyle\or%
+  \textoneoldstyle\texteightoldstyle\or%
+  \textoneoldstyle\textnineoldstyle\or%
+  \texttwooldstyle\textzerooldstyle\or%
+  \texttwooldstyle\textoneoldstyle\or%
+  \texttwooldstyle\texttwooldstyle\or%
+  \texttwooldstyle\textthreeoldstyle\or%
+  \texttwooldstyle\textfouroldstyle\or%
+  \texttwooldstyle\textfiveoldstyle\or%
+  \texttwooldstyle\textsixoldstyle\or%
+  \texttwooldstyle\textsevenoldstyle\or%
+  \texttwooldstyle\texteightoldstyle\or%
+  \texttwooldstyle\textnineoldstyle\or%
+  \textthreeoldstyle\textzerooldstyle\or%
+  \textthreeoldstyle\textoneoldstyle\or%
+  \fi%
+}
+
+\newenvironment{code}
+{\par
+  \vspace*{0.5\baselineskip}
+  \footnotesize
+  \setlength{\baselineskip}{6pt}%
+  \VerbatimEnvironment%
+  \begin{breakbox}%
+    \vspace*{-1\baselineskip}
+    \begin{Verbatim}}
+    {\end{Verbatim}%
+    \vspace*{-0.5\baselineskip}
+  \end{breakbox}
+  \vspace*{0.5\baselineskip}
+}
+
+\newenvironment{codev}
+{\par
+  \vspace*{0.5\baselineskip}
+  \footnotesize
+  \setlength{\baselineskip}{6pt}%
+  \begin{breakbox}}
+  {\end{breakbox}
+  \vspace*{0.5\baselineskip}
+}
+
+\newcommand{\tabref}[1]{\tablename\ref{#1}}
+\newcommand{\figref}[1]{\figurename\ref{#1}}
+
+%%% style of math
+\def\frac#1#2{{\begingroup\>#1\>\endgroup\over\>#2\>}}
+\let\osqrt=\sqrt\def\sqrt{\@ifnextchar[{\@osqrt}{\@@osqrt}}
+\def\@osqrt[#1]#2{\osqrt[#1]{#2\,}\,}
+\def\@@osqrt#1{\osqrt{#1\,}\,}
+
+%%% symbol
+\def\qed{\hspace*{1zw}\rule{5pt}{8.5pt}}
+\def\lr{\hspace*{1zw}\Longleftrightarrow\hspace*{1zw}}
+\def\rr{\hspace*{1zw}\Longrightarrow\hspace*{1zw}}
+\def\sp{\hspace*{1zw}}
+\def\spp{\hspace*{2zw}}
+\def\sppp{\hspace*{3zw}}
+\def\I{I}
+\def\II{I\hspace*{-0.1zw}I}
+\def\III{I\hspace*{-0.1zw}I\hspace*{-0.1zw}I}
+\def\IV{I\hspace*{-0.1zw}V}
+\def\V{V}
+\def\VI{V\hspace*{-0.1zw}I}
+\newcommand{\lmath}[1]{\mathop{\mathrm{#1}}}
+\def\bra{[}
+\def\cket{]}
+\def\backtop{\hspace*{-1zw}}
+\def\zt{\hspace*{1zw}}
+\def\zk{\textbf}
+\def\zv{\textit}
+
+\allowdisplaybreaks

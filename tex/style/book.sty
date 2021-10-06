@@ -1,0 +1,337 @@
+% 
+% common.sty @ 2010/2/2
+% 
+
+%%% usepackage
+\usepackage{common}
+
+%%% setlength
+\setlength{\oddsidemargin}{-1.3truecm}
+\setlength{\textwidth}{18.5truecm}
+\setlength{\headsep}{1truecm}
+\setlength{\topmargin}{-2truecm}
+\setlength{\textheight}{25.5truecm}
+
+%%% others
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+\renewcommand{\l@section}{\@dottedtocline{1}{1zw}{2zw}}
+\renewcommand{\l@subsection}{\@dottedtocline{2}{2.5zw}{3zw}}
+\renewcommand{\l@subsubsection}{\@dottedtocline{3}{4zw}{4.5zw}}
+\renewcommand{\l@paragraph}{\@dottedtocline{4}{5.5zw}{6zw}}
+\renewcommand{\l@subparagraph}{\@dottedtocline{5}{7zw}{7.5zw}}
+
+
+%%% header
+\def\sectionmark#1{\markboth{#1}{}}
+\let\subsectionmark\markright
+
+\pagestyle{empty}
+\renewcommand{\thepage}{{\pag\ifnum\c@page=1\else\arabic{page}\fi}}
+% \renewcommand{\thepage}{{\pag\arabic{page}}}
+\def\@evenhead{%
+  \ifnum\c@section=0\@title\else{\pag\arabic{section}.}\fi\hskip10pt%
+  \leftmark\hfil{\textit\thepage}%
+  \begin{picture}(0,0)%
+    \hskip-25pt\color{deepgray}\raisebox{-5pt}{\put(0,0){\rule{2.5pt}{20pt}}}%
+    \hskip2.5pt\color{middlegray}\raisebox{-5pt}{\put(0,0){\rule{2.5pt}{20pt}}}%
+  \end{picture}%
+  \begin{picture}(0,0)%
+    \hskip-600pt\color{middlegray}\raisebox{-5pt}{\put(0,0){\rule{1500pt}{1pt}}}%
+    \hskip-600pt\color{deepgray}\raisebox{-6pt}{\put(0,0){\rule{1500pt}{1pt}}}%
+  \end{picture}%
+}
+\let\@oddhead\@evenhead
+
+%%% naming
+% \renewcommand{\prechaptername}{{\pag Chap.}}
+% \renewcommand{\postchaptername}{}
+\renewcommand{\contentsname}{{\pag Contents}}
+\renewcommand{\figurename}{Fig.}
+\renewcommand{\tablename}{Table.}
+\renewcommand{\bibname}{{\pag Bibliography}}
+\renewcommand{\refname}{{\pag References}}
+
+%%% list
+\def\labelenumi{(\theenumi)}
+\def\labelenumii{(\theenumii)}
+\def\labelenumiii{(\theenumiii)}
+
+\def\itemindentlist{0zw}
+\def\parseplist{0em}
+\def\leftmarginlist{2zw}
+\def\rightmarginlist{0zw}
+\def\itemseplist{0zw}
+\def\listparindentlist{0zw}
+\def\up{\vspace*{-\parseplist}}
+
+\renewenvironment{itemize}
+{\ifnum \@itemdepth >\thr@@\@toodeep\else%
+  \advance\@itemdepth\@ne%
+  \edef\@itemitem{labelitem\romannumeral\the\@itemdepth}%
+  \expandafter%
+  \list{\csname\@itemitem\endcsname}{%
+    \iftdir%
+    \ifnum \@listdepth=\@ne \topsep.0\normalbaselineskip%
+    \else\topsep\z@\fi%
+    \parskip\z@ \itemsep\z@ \parsep\z@%
+    \ifnum\@itemdepth =\@ne \leftmargin1zw\relax%
+    \else\leftmargin\leftskip\fi%
+    \advance\leftmargin 1zw%
+    \fi%
+    \setlength{\itemindent}{-\itemindentlist}%
+    \setlength{\leftmargin}{\leftmarginlist}%
+    \setlength{\rightmargin}{\rightmarginlist}%
+    \setlength{\labelsep}{0.3zw}%
+    \setlength{\labelwidth}{3zw}%
+    \setlength{\itemsep}{\itemseplist}%
+    \setlength{\parsep}{\parseplist}%
+    \setlength{\listparindent}{\listparindentlist}%
+    \def\makelabel##1{\hss \llap{##1}}}%
+  \fi}{\endlist}
+
+\def\labelenumi{(\theenumi)}
+\def\labelenumii{(\theenumii)}
+\def\labelenumiii{(\theenumiii)}
+\renewcommand{\theenumi}{\@arabic\c@enumi}
+\renewcommand{\theenumii}{\@alph\c@enumii}
+\renewcommand{\theenumiii}{\@Alph\c@enumiii}
+\renewcommand{\theenumiv}{\@roman\c@enumiv}
+\renewenvironment{enumerate}
+{\ifnum \@enumdepth >\thr@@\@toodeep\else%
+  \advance\@enumdepth\@ne%
+  \edef\@enumctr{enum\romannumeral\the\@enumdepth}%
+  \list{\csname label\@enumctr\endcsname}{%
+    \iftdir%
+    \ifnum \@listdepth=\@ne \topsep.0\normalbaselineskip%
+    \else\topsep\z@\fi%
+    \parskip\z@ \itemsep\z@ \parsep\z@%
+    \ifnum \@enumdepth=\@ne \leftmargin1zw\relax%
+    \else\leftmargin\leftskip\fi%
+    \advance\leftmargin 1zw%
+    \fi%
+    \usecounter{\@enumctr}%
+    \setlength{\itemindent}{-\itemindentlist}%
+    \setlength{\leftmargin}{\leftmarginlist}%
+    \addtolength{\leftmargin}{1zw}%
+    \setlength{\rightmargin}{\rightmarginlist}%
+    \setlength{\labelsep}{0.5zw}%
+    \setlength{\labelwidth}{5zw}%
+    \setlength{\itemsep}{\itemseplist}%
+    \setlength{\parsep}{\parseplist}%
+    \setlength{\listparindent}{\listparindentlist}%
+    \def\makelabel##1{\hss\llap{##1}}}%
+  \fi}{\endlist}
+
+\renewenvironment{description}
+{\list{}{%
+    \iftdir%
+    \leftmargin\leftskip \advance\leftmargin3\Cwd%
+    \rightmargin\rightskip%
+    \labelsep=1zw \itemsep\z@%
+    \listparindent\z@ \topskip\z@ \parskip\z@ \partopsep\z@%
+    \fi%
+    \setlength{\itemindent}{-\itemindentlist}%
+    \setlength{\leftmargin}{\leftmarginlist}%
+    \addtolength{\leftmargin}{2zw}%
+    \setlength{\rightmargin}{\rightmarginlist}%
+    \setlength{\labelsep}{0zw}%
+    \setlength{\labelwidth}{3zw}%
+    \setlength{\itemsep}{\itemseplist}%
+    \setlength{\parsep}{\parseplist}%
+    \setlength{\listparindent}{\listparindentlist}%
+    \def\makelabel{\descriptionlabel}}
+}{\endlist}
+\renewcommand{\descriptionlabel}[1]{\bfseries #1\hskip1zw}
+
+%%% title
+\renewcommand{\maketitle}{%
+  \clearpage%
+  \thispagestyle{empty}%
+  \vspace*{200pt}%
+  \begin{center}%
+    {\HUGE\textbf\@title}%
+  \end{center}%
+  \vskip70pt%
+  \begin{center}%
+    {\huge\textbf\@author}\par\vskip40pt%
+    {\HUGE\@date}
+  \end{center}%
+  \vskip25pt%
+  \newpage%
+}
+
+%%% style of section
+\renewcommand{\thechapter}{{\pag Chap.\arabic{chapter}}}
+\renewcommand{\thesection}{{\pag\arabic{section}}}
+\renewcommand{\thesubsection}{{\pag\arabic{section}-\arabic{subsection}}}
+\renewcommand{\thesubsubsection}{{\pag\arabic{section}-\arabic{subsection}-\arabic{subsubsection}}}
+\renewcommand{\thefootnote}{\kern1pt$\star$\kern1pt{\pag\arabic{footnote}}\;\;}
+
+\renewcommand{\chapter}{\@ifstar{\@scchapter}{\@cchapter}}
+\newcommand{\@cchapter}[1]{%
+  \clearpage%
+  \thispagestyle{empty}%
+  \vspace*{20pt}%
+  \begin{picture}(0,0)%
+    \color{middlegray}\raisebox{0pt}{\put(0,0){\rule{60pt}{60pt}}}%
+    \hskip30pt\color{middlegray}\raisebox{-30pt}{\put(0,0){\rule{60pt}{60pt}}}%
+    \color{deepgray}\raisebox{0pt}{\put(0,0){\rule{30pt}{30pt}}}%
+  \end{picture}%
+  \vskip40pt%
+  \begin{picture}(0,0)%
+    \hskip5.5truecm\color{middlegray}\raisebox{42pt}{\put(0,0){\rule{360truept}{1pt}}}%
+    \color{middlegray}\raisebox{40pt}{\put(0,0){\rule{360truept}{1pt}}}%
+    \color{middlegray}\raisebox{38pt}{\put(0,0){\rule{360truept}{1pt}}}%
+  \end{picture}%
+  \vskip15pt%
+  \begin{picture}(0,0)%
+    \hskip17.2truecm\color{middlegray}\raisebox{-31pt}{\put(0,0){\rule{1.0pt}{180pt}}}%
+    \hskip2pt\color{middlegray}\raisebox{-31pt}{\put(0,0){\rule{1.0pt}{180pt}}}%
+    \hskip2pt\color{middlegray}\raisebox{-31pt}{\put(0,0){\rule{1.0pt}{180pt}}}%
+  \end{picture}%
+  {\color{middlegray}\hrule height0pt depth1.0pt}%
+  \vskip1pt%
+  {\color{middlegray}\hrule height0pt depth1.0pt}%
+  \vskip1pt%
+  {\color{middlegray}\hrule height0pt depth1.0pt}%
+  \begin{picture}(0,0)%
+    \hskip17.2truecm\hskip6pt\color{deepgray}\raisebox{-26pt}{\put(0,0){\rule{5.00pt}{180pt}}}%
+  \end{picture}%
+  {\vskip1pt\color{deepgray}\hrule height0pt depth5.0pt}\par%
+  \vspace*{-45pt}%
+  \@startsection{chapter}{1}{\z@}{0pt}{0pt}%
+  {\reset@font\Huge\bfseries}{#1}\par\nopagebreak[4]\vskip2pt\nopagebreak[4]%
+  {}{}\nopagebreak[4]%
+  \vskip55pt%
+}
+
+\newcommand{\@scchapter}[1]{%
+  \clearpage%
+  \thispagestyle{empty}%
+  \vspace*{20pt}%
+  {\color{middlegray}\hrule height0pt depth1.0pt}%
+  \vskip1pt%
+  {\color{middlegray}\hrule height0pt depth1.0pt}%
+  \vskip1pt%
+  {\color{middlegray}\hrule height0pt depth1.0pt}%
+  {\vskip1pt\color{deepgray}\hrule height0pt depth5.0pt}\par%
+  \vspace*{-40pt}%
+  \@startsection{chapter}{11}{\z@}{0pt}{0pt}%
+  {\reset@font\HUGE\bfseries\hskip20pt}{#1}\par\nopagebreak[4]\vskip2pt\nopagebreak[4]%
+  {}{}\nopagebreak[4]%
+  \vskip40pt%
+}
+
+
+\renewcommand{\section}{\@ifstar{\@ssection}{\@section}}
+\newcommand{\@section}[1]{%
+  \vskip12pt%
+  \@startsection{section}{1}{\z@}{0pt}{0pt}%
+  {\reset@font\LARGE\bfseries\hskip20pt}{#1}\par\nopagebreak[4]\vskip2pt\nopagebreak[4]%
+  {\color{middlegray}\hrule height0pt depth2.5pt}\par\nopagebreak[4]%
+  {\color{deepgray}\hrule height0pt depth2.5pt}\par\nopagebreak[4]\vskip4pt\nopagebreak[4]%
+  \begin{picture}(0,0)%
+    \hskip-9.25pt\color{deepgray}\raisebox{6pt}{\put(0,0){\rule{2.5pt}{24pt}}}%
+    \hskip4pt\color{deepgray}\raisebox{6pt}{\put(0,0){\rule{2.5pt}{24pt}}}%
+    \hskip4pt\color{deepgray}\raisebox{6pt}{\put(0,0){\rule{2.5pt}{24pt}}}%
+  \end{picture}\nopagebreak[4]%
+}
+
+\newcommand{\@ssection}[1]{%
+  \vskip10pt%
+  \@startsection{section}{10}{\z@}{0pt}{0pt}%
+  {\reset@font\LARGE\bfseries\hskip30pt}{#1}\par\nopagebreak[4]\vskip2pt\nopagebreak[4]%
+  {\color{middlegray}\hrule height0pt depth2.5pt}\par\nopagebreak[4]%
+  {\color{deepgray}\hrule height0pt depth2.5pt}\par\nopagebreak[4]\vskip4pt\nopagebreak[4]%
+  \begin{picture}(0,0)%
+    \hskip-9.25pt\color{deepgray}\raisebox{6pt}{\put(0,0){\rule{2.5pt}{24pt}}}%
+    \hskip4pt\color{deepgray}\raisebox{6pt}{\put(0,0){\rule{2.5pt}{24pt}}}%
+    \hskip4pt\color{deepgray}\raisebox{6pt}{\put(0,0){\rule{2.5pt}{24pt}}}%
+  \end{picture}\nopagebreak[4]%
+}
+
+\renewcommand{\subsection}{\@ifstar{\@ssubsection}{\@subsection}}
+\newcommand{\@subsection}[1]{%
+  \vskip10pt%
+  \@startsection{subsection}{2}{\z@}{0pt}{0pt}%
+  {\reset@font\large\bfseries\hskip5pt%
+    {\color{deepgray}$\blacksquare$}\hskip5pt}{#1}\par\nopagebreak[4]%
+  {\vskip2pt\color{middlegray}\hrule height0pt depth1.2pt%
+    \color{deepgray}\hrule height0pt depth1.2pt}\par\nopagebreak[4]%
+  \vskip10pt%
+}
+
+\newcommand{\@ssubsection}[1]{%
+  \vskip10pt%
+  \@startsection{subsection}{12}{\z@}{0pt}{0pt}%
+  {\reset@font\large\bfseries\hskip5pt%
+    {\color{deepgray}$\blacksquare$}\hskip10pt}{#1}\par\nopagebreak[4]%
+  {\vskip2pt\color{middlegray}\hrule height0pt depth1.2pt%
+    \color{deepgray}\hrule height0pt depth1.2pt}\par\nopagebreak[4]%
+  \vskip10pt%
+}
+
+\renewcommand{\subsubsection}{\@ifstar{\@ssubsubsection}{\@subsubsection}}
+\newcommand{\@subsubsection}[1]{%
+  \vskip7pt%
+  \@startsection{subsubsection}{3}{\z@}{0pt}{0pt}%
+  {\reset@font\bfseries\hskip10pt}{#1}\par\nopagebreak[4]%
+}
+
+\newcommand{\@ssubsubsection}[1]{%
+  \vskip7pt%
+  \@startsection{subsubsection}{13}{\z@}{0pt}{0pt}%
+  {\reset@font\bfseries\hskip10pt}{#1}\par\nopagebreak[4]%
+}
+
+
+%%% new environment
+
+% \newdimen\vlruleheight \vlruleheight=0.2mm
+% \newdimen\vloffset \vloffset=1pt
+% \newdimen\@@vlo\newdimen\@@vlx
+
+% \def\@vlsplit{%
+%   \ifvoid0\else
+%   \dimen@=\ht0\advance\dimen@\dp0
+%   \setbox1\vsplit0 to \z@\setbox1\vbox{\unvbox1}%
+%   \advance\dimen@-\ht1\advance\dimen@-\dp1
+%   \advance\dimen@-\ht0\advance\dimen@-\dp0
+%   \@tempdimc=\@@vlo\advance\@tempdimc-\dp1\typeout{\the\@tempdimc}
+%   \@tempdimb=\textwidth
+%   \vbox{\hsize=\@tempdimb\vskip\@tempdima\copy1\vskip\@tempdimc
+%     \vskip\vloffset
+%     {\color{lightgray}\hrule height \vlruleheight depth 0pt}
+%     \vskip-\vlruleheight}
+%   \@tempdima=\dimen@
+%   \advance\@tempdima-\vloffset
+%   \advance\@tempdima-\@tempdimc
+%   \ifvoid0\else\penalty\interlinepenalty\fi
+%   \expandafter\@vlsplit\fi}
+
+% \newenvironment{program}[1]
+% {\setlength{\baselineskip}{12pt}\vspace*{0.7truecm}
+%   {\hrule height0.1pt depth0.2pt}\par\vspace*{0.05truecm}
+%   {\hrule height0.1pt depth0.2pt}\par\vspace*{0.3truecm}
+%   \nopagebreak
+%   \fcolorbox[gray]{0}{1}{$\blacktriangleright$\hspace*{-0.4zw}$\blacktriangleright$\hspace*{-0.4zw}$\blacktriangleright$
+%     \hspace*{0.3zw}{\fontfamily{pag}\selectfont \gtfamily #1}}\nopagebreak
+%   \if@noskipsec\leavevmode\fi
+%   \if@inlabel\leavevmode\fi
+%   \ifhmode\unskip\par\fi
+%   \setbox2=\hbox{\tt p}\@@vlo=\dp2\@@vlx=\ht2
+%   \VerbatimEnvironment
+%   \setbox0=\vbox\bgroup\begin{center}\begin{Verbatim}}%
+%     {\end{Verbatim}\end{center}\egroup
+%   \begingroup
+%   \@tempdima=0pt\lineskiplimit\maxdimen\lineskip\z@
+%   \splittopskip\z@\splitmaxdepth\maxdimen
+%   \@vlsplit\par\endgroup\nopagebreak
+%   \vspace*{0truecm}
+%   {\hrule height0.1pt depth0.2pt}\par\vspace*{0.05truecm}
+%   {\hrule height0.1pt depth0.2pt}\par\vspace*{0.5truecm}
+%   \vspace*{0.3truecm}
+% }
+
+\allowdisplaybreaks

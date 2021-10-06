@@ -1,0 +1,18 @@
+<html>
+<body>
+Delete the following texts within 10 seconds.
+<div contentEditable>
+a<p>b<p>c<p>d<span id="span">e<br>f<br>g<br>h</p>i</p>j</p>k
+</div>
+</body>
+<script>
+span = document.getElementById("span");
+setTimeout(function () {
+  // Manually delete the texts in <div>
+  alert("span = " + span);
+  alert("span.parentNode = " + span.parentNode);
+  alert("span.parentNode = " + span.parentNode.parentNode);
+  alert("span.firstChild = " + span.firstChild);
+}, 10000);
+</script>
+</html>

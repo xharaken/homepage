@@ -1,0 +1,240 @@
+<html>
+<head>
+<script>
+function shouldBe(str1, str2) {
+  var result1;
+  try {
+    result1 = eval(str1);
+  } catch (e) {
+    result1 = e;
+  }
+  try {
+    result2 = eval(str2);
+  } catch (e) {
+    result2 = e;
+  }
+  if (result1 === result2)
+    document.body.innerHTML += str1 + " === " + str2 + " <span style='color:green; font-weight:bold'>PASS</span><br>";
+  else
+    document.body.innerHTML += str1 + " was not " + str2 + ". The left hand side was [" + result1 + "] and the right hand side was [" + result2 + "]. <span style='color:red; font-weight:bold'>FAIL</span><br>";
+}
+
+function shouldThrow(str) {
+  var result;
+  var thrown = false;
+  try {
+    result = eval(str);
+  } catch (e) {
+    thrown = true;
+    result = e;
+  }
+  if (thrown === true)
+    document.body.innerHTML += str + " threw [" + result + "]. <span style='color:green; font-weight:bold'>PASS</span><br>";
+  else
+    document.body.innerHTML += str + " did not throw. The result was [" + result + "]. <span style='color:red; font-weight:bold'>FAIL</span><br>";
+}
+
+function log(str) {
+  document.body.innerHTML += str + "<br>";
+}
+
+function run(title, repeatNum, func, rounds) {
+  var result = document.getElementById("result");
+  if (!result) {
+    var result = document.createElement("div");
+    document.body.appendChild(result);
+  }
+
+  var rounds = rounds || 5;
+  var times = [];
+  for (var r = 0; r < rounds; r++) {
+    var start = Date.now();
+    func(repeatNum);
+    var time = Date.now() - start;
+    times.push(time * 1e6 / repeatNum);
+    //result.appendChild(document.createTextNode(time));
+    //result.appendChild(document.createElement("br"));
+  }
+
+  times.sort(function (a, b) { return a - b; });
+  var median = times[Math.floor(times.length / 2)];
+  var min = times[0];
+  var max = times[times.length - 1];
+  var sum = 0;
+  var sum2 = 0;
+  for (var i = 0; i < times.length; i++) {
+    sum += times[i];
+    sum2 += times[i] * times[i];
+  }
+  var avg = sum / rounds;
+  var avgTotal = avg * repeatNum / 1e6;
+  var stdev = Math.sqrt(sum2 / rounds - avg * avg);
+
+  result.appendChild(document.createTextNode(title + " : mean=" + avg.toFixed(2) + "ns, min=" + min + "ns, median=" + median + "ns, max=" + max + "ns, stdev=" + stdev.toFixed(2) + "ns, total=" + avgTotal.toFixed(2) + "ms"));
+  result.appendChild(document.createElement("br"));
+}
+</script>
+</head>
+<body>
+<script>
+Object.defineProperty(Node.prototype, "testAttrOnNodePrototype", {
+  get: function() { return this.testAttrOnNodeInstance; },
+  set: function(v) { this.testAttrOnNodeInstance = v; } });
+Object.defineProperty(Element.prototype, "testAttrOnElementPrototype", {
+  get: function() { return this.testAttrOnElementInstance; },
+  set: function(v) { this.testAttrOnElementInstance = v; } });
+Object.defineProperty(HTMLElement.prototype, "testAttrOnHTMLElementPrototype", {
+  get: function() { return this.testAttrOnHTMLElementInstance; },
+  set: function(v) { this.testAttrOnHTMLElementInstance = v; } });
+Object.defineProperty(HTMLDivElement.prototype, "testAttrOnHTMLDivElementPrototype", {
+  get: function() { return this.testAttrOnHTMLDivElementInstance; },
+  set: function(v) { this.testAttrOnHTMLDivElementInstance = v; } });
+
+
+function checkCorrectness() {
+  div = document.createElement("div");
+  shouldBe('div.hasOwnProperty("testAttrOnHTMLDivElementInstance")', "true");
+  shouldBe('div.hasOwnProperty("testAttrOnHTMLElementInstance")', "true");
+  shouldBe('div.hasOwnProperty("testAttrOnElementInstance")', "true");
+  shouldBe('div.hasOwnProperty("testAttrOnNodeInstance")', "true");
+  shouldBe('div.__proto__.hasOwnProperty("testAttrOnHTMLDivElementPrototype")', "true");
+  shouldBe('div.__proto__.__proto__.hasOwnProperty("testAttrOnHTMLElementPrototype")', "true");
+  shouldBe('div.__proto__.__proto__.__proto__.hasOwnProperty("testAttrOnElementPrototype")', "true");
+  shouldBe('div.__proto__.__proto__.__proto__.__proto__.hasOwnProperty("testAttrOnNodePrototype")', "true");
+  shouldBe('xhr = new XMLHttpRequest(); xhr.__proto__ = HTMLDivElement.prototype; xhr.testAttrOnHTMLDivElementInstance', "undefined");
+  shouldThrow('xhr = new XMLHttpRequest(); xhr.__proto__ = HTMLDivElement.prototype; xhr.testAttrOnHTMLDivElementPrototype');
+  shouldThrow('obj = Object.create(div); obj.testAttrOnHTMLDivElementInstance');
+  shouldThrow('obj = Object.create(div); obj.testAttrOnHTMLDivElementPrototype');
+}
+
+checkCorrectness();
+
+var repeatNum1 = 20000000;
+var repeatNum2 = 10000000;
+var rounds = 10;
+
+var div = document.createElement("div");
+
+log("");
+
+run("div.testAttrOnHTMLDivElementInstance getter", repeatNum1, function(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnHTMLDivElementInstance;
+  }
+}, rounds);
+
+run("div.testAttrOnHTMLElementInstance getter", repeatNum1, function(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnHTMLElementInstance;
+  }
+}, rounds);
+
+run("div.testAttrOnElementInstance getter", repeatNum1, function(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnElementInstance;
+  }
+}, rounds);
+
+run("div.testAttrOnNodeInstance getter", repeatNum1, function(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnNodeInstance;
+  }
+}, rounds);
+
+function pppppp(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnHTMLDivElementPrototype;
+  }
+}
+
+run("div.testAttrOnHTMLDivElementPrototype getter", repeatNum1, pppppp, rounds);
+
+run("div.testAttrOnHTMLElementPrototype getter", repeatNum1, function(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnHTMLElementPrototype;
+  }
+}, rounds);
+
+run("div.testAttrOnElementPrototype getter", repeatNum1, function(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnElementPrototype;
+  }
+}, rounds);
+
+run("div.testAttrOnNodePrototype getter", repeatNum1, function(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnNodePrototype;
+  }
+}, rounds);
+
+log("");
+
+run("div.testAttrOnHTMLDivElementInstance setter", repeatNum2, function(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnHTMLDivElementInstance = "";
+  }
+}, rounds);
+
+run("div.testAttrOnHTMLElementInstance setter", repeatNum2, function(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnHTMLElementInstance = "";
+  }
+}, rounds);
+
+run("div.testAttrOnElementInstance setter", repeatNum2, function(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnElementInstance = "";
+  }
+}, rounds);
+
+run("div.testAttrOnNodeInstance setter", repeatNum2, function(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnNodeInstance = "";
+  }
+}, rounds);
+
+run("div.testAttrOnHTMLDivElementPrototype setter", repeatNum2, function(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnHTMLDivElementPrototype = "";
+  }
+}, rounds);
+
+run("div.testAttrOnHTMLElementPrototype setter", repeatNum2, function(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnHTMLElementPrototype = "";
+  }
+}, rounds);
+
+run("div.testAttrOnElementPrototype setter", repeatNum2, function(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnElementPrototype = "";
+  }
+}, rounds);
+
+run("div.testAttrOnNodePrototype setter", repeatNum2, function(repeatNum) {
+  var div = document.createElement("div");
+  for (var j = 0; j < repeatNum; j++) {
+    div.testAttrOnNodePrototype = "";
+  }
+}, rounds);
+
+log("");
+
+</script>
+</body>
+</html>

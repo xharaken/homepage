@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test>
+  <element>
+    <str>String1</str>
+    <no>1</no>
+  </element>
+
+  <element>
+    <str>String2</str>
+    <no>2</no>
+  </element>
+
+  <element>
+    <str>String3</str>
+    <no>3</no>
+  </element>
+</test>

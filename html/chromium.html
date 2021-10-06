@@ -1,0 +1,77 @@
+<h1>ChromiumとBlink</h1>
+
+<p>
+2011年にGoogleに入社してからずっとChromiumのレンダリングエンジンである<a href="http://www.chromium.org/blink">Blink</a>の開発をやっています。専門分野はブラウザアーキテクチャ全般で、メモリアロケータ（PartitionAlloc）、ガベージコレクション（Oilpan）、メモリ管理のセキュリティ強化（MiraclePtr）、BlinkとV8のバインディング、Web IDLコンパイラ、ページローディングの高速化（Back Forward Cache、Prerendering）、大規模なコードリファクタリング（Onion Soup）などをやってきました。どんなプロジェクトもコードレベルで理解したいという思いがあって、ここ数年はChromiumのコードレビューを世界で一番やってる人になっています。Chromeブラウザの東京チームをリードしています。
+</p>
+
+<h1>ドキュメント置き場</h1>
+
+<p>
+自分が書いたドキュメントをいくつか置いておきます。
+</p>
+
+<ul>
+  <li><a href="https://docs.google.com/document/d/1pnnOAIz_DMWDI4oIOFoMAqLnf_MZ2GsrJNb_dbQ3ZBg/edit#heading=h.p1fqfm5alk4a">MiraclePtr<T> One Pager (2021 July)</a></li>
+  <li><a href="https://docs.google.com/document/d/1jPOHdPH5zvyaL3z2X-r_drz0qDrLB8SOQAGKQxHWXSI/edit#heading=h.pclyw7u82dot">Deterministic stack scanning (2020 Sep)</a></li>
+  <li><a href="https://docs.google.com/document/d/1BTEeY2YJBiT39w_t7kzrAJPjY5L-TcMrnksBM0AOV4w/edit#heading=h.o3evpo8ggebi">Pointer compression with MiraclePtr (2020 Sep)</a></li>
+  <li><a href="https://docs.google.com/document/d/1qsPh8Bcrma7S-5fobbCkBkXWaAijXOnorEqvIIGKzc0/edit#heading=h.j7d3wg2h6goh">Pointer Safety Ideas (2020 Sep)</a></li>
+  <li><a href="https://docs.google.com/document/d/1ph7iOorkGqTuETFZp-xvHV4L2rYootuz1ThzAAoGe30/edit#heading=h.b57m9s7iv7yr">MTECheckedPtr (2020 July)</a></li>
+  <li><a href="https://docs.google.com/document/d/14TsvTgswPUOQuQoI9TmkFQnuSaFD8ZLHRvzapNwl5vs/edit#heading=h.87hipl7a1s4c">CheckedPtr2 and CheckedPtr3 (2020 Apr)</a></li>
+  <li><a href="https://docs.google.com/document/d/1tpHHlDiVMrsWlriQ6KKfvHNQMf0Li7Atdm6RgSpCVgA/edit#heading=h.gxb1u2ayxuv5">SafePtr (concurrent use-after-free sanitization) (2020 Mar)</a></li>
+  <li><a href="https://docs.google.com/document/d/1NginQ8k0w3znuwTiJ5qjYmBKgZDekvEPC22q0I4swxQ/edit#heading=h.w1qo2n6sr8wn">Multiple Page Architecture (2020 Jan)</a></li>
+  <li><a href="https://docs.google.com/document/d/12wEWJsZmxVnNwVGuxuEJF4922OWUr4fCs1xKHi9mTiI/edit#heading=h.g6fq85as9ptv">Multi-threading Blink (2019 Oct)</a></li>
+  <li><a href="https://docs.google.com/document/d/1lzGeXN4nwnANdFSpVxmJ1TUgb3QBPFCjVxLsFVBlKdE/edit#heading=h.uokewwiwnmn">Onion Soup 2.0 (2019 Aug)</a></li>
+  <li><a href="https://docs.google.com/document/d/1aitSOucL0VHZa9Z2vbRJSyAIsAz24kX8LFByQ5xQnUg/edit#heading=h.v5plba74lfde">How Blink Works (2018 Aug)</a></li>
+  <li><a href="https://docs.google.com/document/d/14WoGZ8pfD4TmOFDebE-WIgkfQ62MnOiyafQI4Zhqjzs/edit#heading=h.btyau8ngpgwx">Cooperative Scheduling in Blink (2017 Jun)</a></li>
+  <li><a href="https://docs.google.com/document/d/1h3Hyl3b1uyWDt875ZVQfcJ9ts5PbsQT81oZeUIMt7LQ/edit#heading=h.ho5nfzray045">Toward a Unified Garbage Collection (2017 May)</a></li>
+  <li><a href="https://docs.google.com/document/d/16vHrxUFKWu3ol_sRNp7h4I4mS5q0Mw976NbBv2uQ3f8/edit#heading=h.ho5nfzray045">Making Oilpan incremental (2017 May)</a></li>
+  <li><a href="https://docs.google.com/document/d/1hBKAYGGM2Zm7qhqXtdLSubklVDKUo9ir-vJtPEOx11Y/edit#heading=h.yc28az2hj3n0">Onion Soup 2.0 (2017 May)</a></li>
+  <li><a href="https://docs.google.com/document/d/1NTkpdfnSNJT5IMTJj9RlqkcCD3T1kpEniQF5nlCpjdQ/edit#heading=h.yc28az2hj3n0">Memory Coordinator roadmap (2017 Apr)</a></li>
+  <li><a href="https://docs.google.com/document/d/1LlZz8BqxVIaXbTSsYN4ZPgYGwJJpxMq2_sv6RvdRXTI/edit">State of Chrome's memory (2016 Dec)</a></li>
+  <li><a href="https://docs.google.com/document/d/1JfnW6RpRDuuZITQ3xuFUIRBfC_KOG5xXUuW8U_UePJU/edit#heading=h.5kn2ytfgpq7m">Renderer's Memory Visualization (2016 May)</a></li>
+  <li><a href="https://docs.google.com/document/d/1cm0O3XOaHQWxy-mdlht5eNe3JoLzzXtn6o4tYjbIaVw/edit">A Final Performance Report of Oilpan (2015 Oct)</a></li>
+  <li><a href="https://docs.google.com/document/d/1H3u4yCRGeF4QkEQ0LOITZLrU99UUnBSSj3nIEDNkQ2E/edit">Blink String Compression (2015 Sep)</a></li>
+  <li><a href="https://docs.google.com/document/d/1gu7NwxuQ9fLWRRBjbH1MGKr7RZEx9ESRCZ3P4KwvP68/edit">Making Blink ⇔ V8 reference cycles collectable (2015 Aug)</a></li>
+  <li><a href="https://docs.google.com/document/d/1fG0MzLU7SXHwOQGHIJZh6Dmm8rQFR1fCRR0kAFXqrX0/edit#">Oilpan Mid-term Status and Future Plans (2015 Jan)</a></li>
+  <li><a href="https://docs.google.com/document/d/1HfRnxFDq8qW9GWQXtD2-IE2OIBeuZjPikBMsuMrpIWY/edit">Non-blocking HTML Parsing (2014 Oct)</a></li>
+  <li><a href="https://docs.google.com/document/d/1AtnKpzQaSY3Mo1qTm68mt_3DkcZzrp_jcGS92a3a1UU/edit">Hardening Security of Content Scripts (Jan 23)</a></li>
+  <li><a href="https://docs.google.com/document/d/13cT9Klgvt_ciAR3ONGvzKvw6fz9-f6E0FrqYFqfoc8Y/edit">Blink-in-JavaScript (2014 Jan)</a></li>
+  <li><a href="https://docs.google.com/document/d/1j39sbA9ECTwFFlxbhSD1EvJnGfYeS5EUJ05yxuku6VY/edit">An Always-Running Sampling Profiler for Your Daily Browsing (2013 Aug)</a></li>
+  <li><a href="https://docs.google.com/document/d/16DeHrzkm3cO9XCPT1aK3Y5qgUxXB3RFmueqQWYmN2rI/edit#">A Hopefully Final Version of a Generational DOM GC (2012 Oct)</a></li>
+  <li><a href="https://docs.google.com/document/d/1h0-EsHu7T0sSMuZm5eE0r1e8sCAzY3weLvsDUpOSngE/edit">Performance & Memory Impacts of a Hopefully Final Version of a Generational DOM GC (2012 Oct)</a></li>
+  <li><a href="https://docs.google.com/document/d/1OMG0fXB3DDvBaQ2YgxWLzzKjn9nWp8y_oTdQqFkBWhw/edit">Redesigning V8 Garbage Collection for DOM Objects (2012 May)</a></li>
+</ul>
+
+<h1>スライド置き場</h1>
+
+<p>
+Blinkのカンファレンスなどで発表したときのスライドをいくつか置いておきます。
+</p>
+
+<ul>
+  <li><a href="https://docs.google.com/presentation/d/1AzBcuN-dmctk7v1IMZHivfpFAiXwCnsjyJS3wQ4sgE4/edit#slide=id.g82989a6582_1_134">Chromiumのアーキテクチャを解き明かす (2020 Apr)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1WrC6cdPc5yY4sv8_Q5rcJyvY2lHee6_pL6in3DWGZrA/edit#slide=id.g40766e9401_0_0">2019 planning / Platform Architecture team (2018 Sep)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1s8qy_yPrR1Q3AngHnfHFIlIzoDaoLrBAL-Iy0FHeTOY/edit#slide=id.g144f3402ef_0_0">State of Chrome's Memory (2017 Feb)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1Az-F3CamBq6hZ5QqQt-ynQEMWEhHY1VTvlRwL7b_6TU/edit#slide=id.g144f3402ef_0_0">State of Blink's Speed (2017 Sep)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/13EnD3jucn09RCwk6IoYr3sDhO0uAkDXDdy5NXyHgIgU/edit#slide=id.g144f3402ef_0_0">Platform Architecture Team @ Sydney (2017 Feb)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1T5KJa3hbq1t6I4t_mHIYoSuVJMbWZ3TKrXFvyCCL_Js/edit#slide=id.g144f3402ef_0_0">Platform Architecture Team Roadmap for 2017 (2016 Oct)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1_LRxXp30j60npShHSRVit0B5tLOS4TLiZ68gQ8nFLsM/edit#slide=id.g437b0e633_00">Blink Memory Reduction (@BlinkOn5) (2015 Nov)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/18OiH9iIFK90uR-4wEwjn97IqXGGUiANBZgENt9dAkQg/edit#slide=id.g437b0e633_00">Memory & Binding Team Roadmap 2015 Oct (2015 Oct)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1soWvmqxWuZQ_ZchvPZFgf5frAQBBlq5f2tJTuDDPZI8/edit#slide=id.g437b0e633_00">A Thorough Study of Blink's Memory in Real-world Websites (2015 Oct)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1YTrPHXxadjK_kjqjb2rx-C5hnJKEbCC77hzcJtk96B4/edit#slide=id.g9d13216a6_1_0">Blink Allocator (@BlinkOn4) (2015 May)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1NxoIZyFO_qao7LyvHlBr9XEd2Eq8rJOOZcBDQdA0d4Y/edit#slide=id.g437b0e633_00">Blink Architecture Next (@BlinkOn4) (2015 May)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1ZY6knuXRR0OwiMJgZfwB4s0POqqjd_B8pa7xRcinxQU/edit#slide=id.g437b0e633_00">Binding team 2015 (2015 Mar)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1KKjKsgZ6aRo0pqdCcVKWaYsMjGt-7uaab2hpzxXmDAk/edit#slide=id.g437b0e633_00">Memory team 2015 (2015 Mar)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1-5wpqeIltM40DAZdQBhbqnzOZuFNezS4eUfx1T4YV50/edit#slide=id.g437b0e633_00">Future of Blink-in-JS (@BlinkOn3) (2014 Nov)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1Nid96XTjKSWowoQ8FQOpCnbe91kOXLAeiafKsDQ5Smw/edit#slide=id.g437b0e633_00">Oilpan's Performance & Shipping Plan (@BlinkOn3) (2014 Nov)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1XvZdAF29Fgn19GCjDhHhlsECJAfOR49tpUFWrbtQAwU/edit#slide=id.g3840fe06e_00">Blink-in-JavaScript (@BlinkOn2) (2014 May)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1YtfurcyKFS0hxPOnC3U6JJroM8aRP49Yf0QWznZ9jrk/edit#slide=id.p">Oilpan: GC for Blink (2013 Dec)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1M8OFkFXg6bDURncZMw01if2A89YHYl94XmWT1pjvvJI/edit#slide=id.p">JavaScript Bindings (@BlinkOn1) (2013 Sep)</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1X0TaHS7N5MjrTfx0jEi3a2V_uuyrd101jto3rOjttP4/edit#slide=id.p">A Generational GC for DOM Nodes</a></li>
+  <li><a href="https://docs.google.com/presentation/d/1OFG81taxgjOGU43sv9WHvPZkt5--KnM6gSijWN8NMcU/edit#slide=id.p">V8 Binding Explained</a></li>
+</ul>
+
+<h1></h1>
+
+<p>これらの資料の内容は私個人の意見を表明するもので、
+私の所属する団体の意志を表明するものではありません。</p>

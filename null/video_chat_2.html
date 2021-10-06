@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<body>
+<script src="peer.js"></script>
+<script src="video_chat_2.js"></script>
+<h2>Video Chat App</h2>
+
+<div>Your ID is <b><span id="id"></span></b></div>
+<div>Enter your name:
+  <input type="text" id="name"></input>
+</div>
+<div id="connect_div">Enter the ID you want to call:
+  <input type="text" id="call_id"></input>
+  <input type="button" id="call_button" value="Call"></input>
+</div>
+<div id="disconnect_div" style="display:none">
+  <input type="button" id="disconnect_button" value="Disconnect"></input>
+</div>
+
+<hr>
+<div style="margin-bottom: 20px">Connection status: <span id="connection_status"></span></div>
+<div style="margin-right: 20px; float:left">
+  <video id="video" autoplay="autoplay" width="400" style="background-color: #ccccff"></video>
+</div>
+<div>
+  <div>
+    Message:
+    <input type="text" id="send_message" size="50"></input>
+    <input type="button" id="send_button" value="Send"></input>
+  </div>
+  <div id="message_log"></div>
+</div>
+<div style="clear:left"></div>
+</body>
+</html>

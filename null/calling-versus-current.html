@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+var i = document.createElement('iframe');
+i.src = 'innocent-victim.html';
+i.onload = function () {
+  window.f = frames[0].atob;
+  document.domain = 'haraken.info';
+  console.log(btoa(window.f('PASS')), 'PASS');
+};
+document.body.appendChild(i);
+</script>
+</body>
+</html>

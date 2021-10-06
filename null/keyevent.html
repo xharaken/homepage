@@ -1,0 +1,47 @@
+<html>
+<head>
+</head>
+<body>
+<input type="text" id="input" onkeydown="alert('keydown')" onkeyup="alert('keyup')" onkeypress="alert('keypress')" oninput="alert('input')"/>
+</body>
+<script>
+var input = document.getElementById("input");
+input.focus();
+input.setSelectionRange(0, 0);
+input.value = "foo";
+alert(input.value);
+
+var event;
+event = document.createEvent("KeyboardEvent");
+if (event.initKeyboardEvent)
+    event.initKeyboardEvent("keydown", true, true, null, false, false, false, false, 65, 0);
+else
+    event.initKeyEvent("keydown", true, true, null, false, false, false, false, 65, 0);
+input.dispatchEvent(event);
+alert(input.value);
+
+event = document.createEvent("KeyboardEvent");
+if (event.initKeyboardEvent)
+    event.initKeyboardEvent("keypress", true, true, null, false, false, false, false, 65, 0);
+else
+    event.initKeyEvent("keypress", true, true, null, false, false, false, false, 65, 0);
+input.dispatchEvent(event);
+alert(input.value);
+
+event = document.createEvent("KeyboardEvent");
+if (event.initKeyboardEvent)
+    event.initKeyboardEvent("keyup", true, true, null, false, false, false, false, 65, 0);
+else
+    event.initKeyEvent("keyup", true, true, null, false, false, false, false, 65, 0);
+input.dispatchEvent(event);
+alert(input.value);
+
+event = document.createEvent("KeyboardEvent");
+if (event.initKeyboardEvent)
+    event.initKeyboardEvent("input", true, true, null, false, false, false, false, 65, 0);
+else
+    event.initKeyEvent("input", true, true, null, false, false, false, false, 65, 0);
+input.dispatchEvent(event);
+alert(input.value);
+</script>
+</html>

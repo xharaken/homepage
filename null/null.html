@@ -1,0 +1,11 @@
+<html><body>
+<script>
+p = document.createElement("p");
+p.innerHTML ='<div><span>a</span></div>';
+span = p.querySelector("span");
+p.innerHTML = "";
+alert(span.parentNode); // null
+</script>
+</body></html>
+
+

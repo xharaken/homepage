@@ -1,0 +1,866 @@
+\documentclass[25pt,papersize,landscape]{jsarticle}
+\usepackage{slide}
+\title{アドレス空間の大きさに制限されない\\スレッド移動を実現するPGAS処理系}
+\author{東京大学　原健太朗，中島潤，田浦健次朗}
+\def\year{2010}
+\def\month{8}
+\def\day{5}
+\date{\mytoday}
+
+\def\ora#1{\overrightarrow{#1}}
+\def\zzt{\hskip2zw}
+
+\begin{document}
+
+\maketitle
+
+\section{序論}
+
+\subsection{背景と目的}
+
+\begin{itemize}
+\item 背景：大規模な並列科学技術計算
+  \begin{itemize}
+  \item 応力解析
+  \item 流体解析
+  \item 地震シミュレーション
+  \item ...
+  \end{itemize}
+\item 目的：\bfred{大規模な並列科学技術計算をクラウド上で効率的に実行できる
+  並列分散プログラミング処理系を作る}
+\end{itemize}
+
+\subsection{クラウドとは何か?}
+
+\begin{itemize}
+\item クラウドのしくみ：
+  \begin{itemize}
+  \item プロバイダがデータセンタを構築・管理して，
+    それらの計算資源をサービスとして提供
+  \item ユーザは，それらの計算資源を従量性課金のもとで必要なときに必要なだけ利用可能
+  \end{itemize}
+\item モデル：\bfred{多数の計算資源を多数のユーザで利用}
+  \begin{itemize}
+  \item 計算資源はどうスケジューリングされるのか?
+  \end{itemize}
+\end{itemize}
+\up{14}
+\fig{0.26}{slide_cloudservice.eps}
+
+\subsection{クラウドにおける計算資源のスケジューリング(1)}
+
+\begin{itemize}
+\item ユーザAの負荷が増大したら，ユーザAの計算規模が拡張
+\end{itemize}
+
+\fig{0.3}{slide_cloudex1.eps}
+
+\subsection{クラウドにおける計算資源のスケジューリング(2)}
+
+\begin{itemize}
+\item やがてユーザBの負荷が増大したら，
+  (何らかのスケジューリングポリシーに基づいて)
+  ユーザAの計算規模を縮小する代わりにユーザBの計算規模を拡張
+\end{itemize}
+
+\fig{0.3}{slide_cloudex2.eps}
+
+\subsection{クラウドの本質}
+
+\begin{itemize}
+\item モデル：多数の計算資源を多数のユーザで利用
+\item 結果：\bfred{各ユーザが利用可能な計算資源が全体の負荷状況に応じて動的に増減}
+  \begin{itemize}
+  \item Amazon EC2 Spot：マシンを「競り落して」使う
+  \end{itemize}
+\end{itemize}
+
+\fig{0.2}{slide_cloudessence.eps}
+
+\subsection{では，クラウド上での並列計算はどう動くべきか?}
+
+\begin{itemize}
+\item 対象アプリ：\bfred{長時間を要する}大規模な並列科学技術計算
+\item 計算資源が動的に増減しうるクラウド上では，
+  これらのアプリは，\bfred{そのとき利用可能な計算資源に対応して，
+  アプリの計算規模(=並列度)を動的に拡張・縮小}して動かなければならない{\scriptsize[Chaudhart et al,2006]}
+  \begin{itemize}
+  \item しかし，そのような並列アプリを書くのは困難
+  \item 処理系による強力なサポートが必須!
+  \end{itemize}
+\end{itemize}
+
+\fig{0.2}{slide_cloudparallel.eps}
+
+\subsection{要請される並列分散プログラミングモデル}
+
+\begin{enumerate}
+\item プログラマは，\bfred{「単に」アプリの十分な並列性を書けば良い}
+\item あとは処理系が，それら大量の並列性を利用可能な計算資源に動的にマップして，
+  \bfred{「透過的に」計算規模を拡張・縮小}してくれる
+\item プログラマは，並列インスタンス間の\bfred{データ共有を簡単に表現}できる
+\end{enumerate}
+\up{10}
+\fig{0.19}{slide_cloudprogrammingmodel.eps}
+
+\subsection{データ共有を簡単に表現させるためには?}
+
+\fig{0.48}{slide_datamodel.eps}
+\begin{itemize}
+\item 結論：\bfred{グローバルビュー型のPGASモデル}
+  \begin{itemize}
+  \item 簡単：グローバルメモリがあるから
+  \item 高性能：リモートとローカルを明確に区別できるから
+  \end{itemize}
+\end{itemize}
+
+\subsection{提案：DMI(Distributed Memory Interface)}
+
+\begin{itemize}
+\item \bfred{DMI}：\bfred{並列計算の規模を「透過的に」拡張・縮小可能なPGAS処理系}
+  \begin{enumerate}
+  \item プログラマは，\bfred{「単に」十分な数のスレッドを生成するだけ}で良い
+  \item あとはDMIが，それら大量のスレッドを利用可能な計算資源に動的にマップして，
+    \bfred{「透過的に」計算規模を拡張・縮小}してくれる
+  \item スレッド間のデータ共有レイヤーとして，\bfred{高性能なグローバルメモリ}が提供される
+  \end{enumerate}
+\end{itemize}
+\up{12}
+\fig{0.16}{slide_dmi.eps}
+
+\subsection{DMIのプログラミングインタフェース}
+
+\begin{itemize}
+\item C言語の静的ライブラリ
+\item \bfred{概念的には普通の共有メモリ環境のスレッドプログラミングと同じ}：簡単!
+  \begin{itemize}
+  \item mmap/munmap
+  \item read/write
+  \item 同期
+  \item スレッドのcreate/join/detach
+  \item ...その他86個のAPI
+  \end{itemize}
+\end{itemize}
+
+\fig{0.34}{slide_dmiapi.eps}
+
+\subsection{DMIの主要技術}
+
+\begin{enumerate}
+\item グローバルメモリへのread/writeをいかに高性能化するか[PRO論文誌2010][HPDC2010]
+\item ノードの動的な参加・脱退を越えて，
+  グローバルメモリのコンシステンシをいかに維持するか[PRO論文誌2010]
+\item \bfred{生きたスレッドをどう移動させるか?}[SWoPP2010]
+  \begin{itemize}
+  \item \bfred{random-address}：スレッド移動のための\bfred{新}アドレス管理手法
+  \end{itemize}
+\end{enumerate}
+\up{20}
+\fig{0.3}{slide_dmitechnique.eps}
+
+
+\section{関連研究}
+
+\subsection{計算を移動する際の粒度}
+
+\begin{itemize}
+\item ポイント：「何」を粒度として計算規模の拡張・縮小(=\bfred{計算移動})を実現すべきか?
+  \begin{itemize}
+  \item 候補：仮想マシン，プロセス，スレッド
+  \end{itemize}
+\item 観察：
+  \begin{itemize}
+  \item 計算移動のコストは，移動対象の資源消費量に比例
+  \item \bfred{資源消費量は，VM>プロセス>スレッド}
+  \item たいていの並列科学技術計算は，プロセスorスレッドのレベルで処理が完結しているので，
+    OSレベルでの機能の移動までは要求されない{\scriptsize[Chaudhart et al,2006]}
+    \begin{itemize}
+    \item 仮想マシンの移動は「必要以上に重すぎる」
+      \begin{itemize}
+      \item 例：Amazon EC2，Windows Azure
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\item 結論：\bfred{プロセスorスレッドを粒度とした計算移動}が適切
+\end{itemize}
+
+\subsection{関連研究1：Google App Engine(GAE)}
+
+\begin{itemize}
+\item Googleの効率的なインフラ上でWebアプリを実行可能なサービス
+\item Webリクエスト数の増減に応じて，自動的かつ高速に処理プロセス数が拡張・縮小される
+\item 30秒ルール：\bfred{各Webリクエストは短時間(30秒以内)で終了されなければならない}
+  \begin{itemize}
+  \item 欠点：長時間を要する並列科学技術計算をサポートできない
+  \end{itemize}
+\end{itemize}
+
+\fig{0.26}{slide_gae.eps}
+
+\subsection{関連研究1：GAEにはなぜ30秒ルールが必要なのか?}
+
+\begin{itemize}
+\item そもそもの要請：ユーザ間で高速に(=応答性良く)計算資源をスケジューリングしたい
+\item GAEにはなぜ30秒ルールが必要なのか?
+  \begin{itemize}
+  \item システム：\bfred{各Webリクエスト単位でしかスケジューリングできない}
+  \item 結果：各Webリクエストの実行時間を制限する必要が出てくる
+  \end{itemize}
+\item DMIにはなぜ30秒ルールがいらないのか?
+  \begin{itemize}
+  \item システム：\bfred{任意のタイミングでスケジューリングできる}
+    \begin{itemize}
+    \item スレッド実行中の「(ほぼ)いつでも」スレッドを移動できる
+    \end{itemize}
+  \item 結果：各スレッドの実行時間を制限しなくてOK
+    \begin{itemize}
+    \item 長時間を要する並列科学技術計算をサポート可能!
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\subsection{関連研究2：MPIのプロセス移動}
+
+\begin{itemize}
+\item Adaptive MPI{\scriptsize[Huang et al,2003]}，MPI Process Swapping{\scriptsize[Sievert et al,2004]}
+  \begin{itemize}
+  \item 目標：計算環境の負荷状況に応じて，
+    処理系がMPIプロセス(orスレッド)を動的に移動させることで，
+    クラウドのような動的な計算環境における負荷分散を透過的に実現
+  \end{itemize}
+\item DMIとの比較：
+  \begin{itemize}
+  \item 目標は同じ
+  \item しかしプログラミングの簡単さは，
+    \bfred{(DMIにおける)PGASモデル$\gg$(MPIにおける)メッセージパッシングモデル}
+  \end{itemize}
+\item DMIの新規性：
+  \begin{enumerate}
+  \item \bfred{「(同じ)目標を(より簡単な)PGASモデルでいかに実現するか」}
+  \item その要素技術としての，スレッド移動のための\bfred{新}アドレス管理手法：\bfred{random-address}
+  \end{enumerate}
+\end{itemize}
+
+\section{提案手法：random-address}
+
+\subsection{DMIの概要}
+
+\fig{0.38}{slide_system.eps}
+
+\begin{itemize}
+\item \bfred{マルチスレッド型のユーザレベルPGAS処理系}
+  \begin{itemize}
+  \item SPMDではない
+  \item DMI\_create()/DMI\_join()でスレッドの生成・回収
+  \end{itemize}
+\item \bfred{スレッドメモリ}と\bfred{グローバルメモリ}を明確に分離
+  \begin{itemize}
+  \item スレッドメモリ：通常のmalloc()/free() $+$ 通常のread/write
+  \item グローバルメモリ：DMI\_mmap()/DMI\_munmap() $+$ 
+    DMI\_read()\\/DMI\_write()
+  \end{itemize}
+\item \bfred{プロセスの動的な参加・脱退}をサポート
+\end{itemize}
+
+\subsection{DMIにおけるスレッド移動}
+
+\begin{itemize}
+\item スレッドを別プロセスに移動
+\end{itemize}
+
+\fig{0.48}{slide_threadmigdmi.eps}
+
+\subsection{スレッド移動における「一般的な」問題点}
+
+\begin{itemize}
+\item スレッドが使っているアドレス領域を，
+  移動元プロセスと移動先プロセスとで完全に一致させないと，
+  ポインタが無効化してしまう
+\item 何の対策も取らなければ，
+  移動元プロセスでスレッドが使っているアドレス領域が
+  移動先プロセスで空いている保証などない
+\end{itemize}
+
+\fig{0.37}{slide_pointer.eps}
+
+\subsection{既存研究における解決策}
+
+\begin{itemize}
+\item 解決策1：移動直後に，移動先プロセスのアドレス領域に合わせて
+  全ポインタの値を正しく更新する{\scriptsize[Cronk et al,1997]}
+  \begin{itemize}
+  \item C言語は型安全ではないので全ポインタを正しく追跡するのは困難
+  \end{itemize}
+\item 解決策2(iso-address)：アドレス領域全体(例：$2^{32}$)を静的に分割して，
+  各スレッドが使えるアドレス領域を予め決め打っておく{\scriptsize[Weissman et al,1998]}
+  \begin{itemize}
+  \item 各スレッドが使うアドレスのグローバルな一意性を保証
+  \item 移動先プロセスでは必ず同一アドレス領域に配置できるので，
+    ポインタ無効化の問題が起きない
+  \item 従来の見解：\bfred{「32bit環境では非現実的だが，64bit環境なら大丈夫」}{\scriptsize[Itzkovitz et al,1998][Weissman et al,1998][Thitikamol et al,1999]}
+  \end{itemize}
+\end{itemize}
+
+\fig{0.5}{slide_isoaddress.eps}
+
+\subsection{本当に64bit環境ならば大丈夫なのか?}
+
+\begin{itemize}
+\item 多くの64bit環境で使用可能なアドレス空間は$2^{47}$バイト
+\end{itemize}
+\up{14}
+\fig{0.5}{slide_64bit.eps}
+\up{14}
+\begin{itemize}
+\item これらの数字は現在の超並列環境では十分現実的
+  \begin{itemize}
+  \item 「限界が近い」
+  \end{itemize}
+\item \bfred{アドレス空間の大きさに制限されないスレッド移動手法が必須}
+  \begin{itemize}
+  \item たとえハードウェアの進化に伴って$2^{47}$という数字が増えるとしても必要
+  \end{itemize}
+\end{itemize}
+
+\subsection{基本アイディア：random-address (1)}
+
+\begin{enumerate}
+\item 各スレッドが使うアドレスを\bfred{ランダムに}決定
+\item 「運が良ければ」スレッド移動時にアドレスが衝突しない
+\end{enumerate}
+
+\fig{0.38}{slide_random1.eps}
+
+\subsection{基本アイディア：random-address (2)}
+
+\begin{enumerate}
+\item 「運が悪ければ」スレッド移動時にアドレスが衝突
+  \begin{enumerate}
+  \item 移動先ノードに\bfred{新しいプロセス(=新しいアドレス空間)を生成}
+  \item その新しいプロセスの中へスレッドを移動
+  \end{enumerate}
+\end{enumerate}
+\up{10}
+\begin{itemize}
+\item DMIがプロセスの動的な参加・脱退に対応しているからこそ実現できる手法
+\end{itemize}
+\up{14}
+\fig{0.255}{slide_random2.eps}
+
+\subsection{アドレスが衝突すると?}
+
+\begin{itemize}
+\item \bfred{アドレスが衝突するとノード内プロセス数が増える}
+\end{itemize}
+
+\fig{0.28}{slide_random2.eps}
+
+\subsection{ノード内プロセス数が増えると?}
+
+\begin{itemize}
+\item \bfred{ノード内プロセス数が増えると性能が劣化}
+  \begin{itemize}
+  \item 一般論：\bfred{スレッドよりプロセスの方が重い}から
+  \item 理由1：管理用スレッドが無駄に増えてしまうから
+  \item 理由2：グローバルメモリのデータキャッシュをスレッド間で共有できなくなるから
+  \end{itemize}
+\end{itemize}
+
+\fig{0.27}{slide_processincr.eps}
+
+\subsection{random-addressにおけるポイント}
+
+\begin{itemize}
+\item 事情の整理：
+  \begin{itemize}
+  \item アドレスが衝突するとノード内プロセス数が増える
+  \item ノード内プロセス数が増えると性能が劣化する
+  \end{itemize}
+\item 結論：\bfred{アドレス衝突確率を最小化}するための工夫が必須
+  \begin{itemize}
+  \item 各スレッドが使うアドレスをランダムに決めるとはいえ\bfred{「デタラメ」ではダメ}
+  \end{itemize}
+\end{itemize}
+
+\subsection{アドレス衝突確率の最小化：考えるべき問題}
+
+\begin{itemize}
+\item 状況：
+  \begin{itemize}
+  \item たくさんのスレッドがある
+  \item 各スレッドは，他のスレッドがどのようなアドレス集合を使っているかの知識を持たない
+  \end{itemize}
+\item 問題：「どの2本のスレッド$i$とスレッド$j$に対しても，
+  スレッド$i$が使っているアドレス集合とスレッド$j$が使っているアドレス集合が共通部分を持たない確率」
+  を最大化するためには，各スレッドはどのようなアドレス割り当ての戦略を取れば良いか?
+\end{itemize}
+\up{20}
+\fig{0.3}{slide_minimize.eps}
+
+\subsection{アドレス衝突確率の最小化：最適な戦略}
+
+\begin{itemize}
+\item 最適な戦略(の1つ)：\bfred{全スレッドがアドレスを「連続的に」使う}
+  \begin{itemize}
+  \item 問題の厳密な定義，数学的な証明は論文を参照
+  \end{itemize}
+\end{itemize}
+
+\fig{0.4}{slide_continuous.eps}
+
+\subsection{アドレスアロケータのアルゴリズム}
+
+\begin{itemize}
+\item 各プロセス内で，\bfred{各スレッドが使うアドレス領域が
+できるかぎり「連続的に」なる}ように管理
+\end{itemize}
+\up{20}
+\fig{0.28}{slide_allocator.eps}
+
+\subsection{(特定の知識のもとで)さらに最適な戦略(1)}
+
+\begin{itemize}
+\item 整数$x$を「うまく」選んで，
+  各スレッドが使うアドレス領域の開始アドレスを\bfred{$x$の整数倍にアライン}させる
+  \begin{itemize}
+  \item 2本のスレッドのアドレス集合がごく一部だけ(=「惜しく」)衝突することに起因する
+    アドレス衝突が起きにくくなるため，全体としてのアドレス衝突確率が下がる
+  \end{itemize}
+\end{itemize}
+
+\fig{0.35}{slide_align.eps}
+\up{10}
+
+\subsection{(特定の知識のもとで)さらに最適な戦略(2)}
+
+\begin{itemize}
+\item アライン$x$の最適値は?
+  \begin{itemize}
+  \item \bfred{各スレッドの使用メモリ量に依存}
+  \item 自明な例：全スレッドが常に$m$バイトを使うとわかっているならば$x=m$が最適
+  \item 実際には，各スレッドの使用メモリ量の予測値に基づいて$x$を決定
+  \end{itemize}
+\end{itemize}
+
+\fig{0.35}{slide_align.eps}
+\up{10}
+
+\section{プログラミングインタフェース}
+
+\subsection{プログラミングインタフェース(1)}
+
+\fig{0.36}{slide_interface.eps}
+
+\begin{itemize}
+\item \bfred{協調的なスレッド移動}
+  \begin{itemize}
+  \item DMI\_yield()が呼ばれたとき，
+    スレッド移動の必要があればDMI\_yield()の「中」でスレッド移動
+  \end{itemize}
+\end{itemize}
+
+\subsection{プログラミングインタフェース(2)}
+
+\fig{0.36}{slide_interface.eps}
+\up{16}
+\begin{itemize}
+\item プログラム側では\bfred{必要十分に短い間隔でDMI\_yield()を呼び出す「だけ」}
+  \begin{itemize}
+  \item (計算規模の拡張・縮小非対応の)DMIプログラムに対する\bfred{変更はわずか}
+  \end{itemize}
+\item ......ただし，実は「若干の制約」がある(なぜか?)
+\end{itemize}
+
+\subsection{スレッド移動の失敗例(1)}
+
+\begin{itemize}
+\item 別のスレッドのスタック領域を使っているスレッドを別プロセスに移動させたら...
+  \begin{itemize}
+  \item 破綻!
+  \end{itemize}
+\end{itemize}
+
+\fig{0.4}{slide_motivation1.eps}
+
+\subsection{スレッド移動の失敗例(2)}
+
+\begin{itemize}
+\item グローバル変数を使っているスレッドを別プロセスに移動させたら...
+  \begin{itemize}
+  \item グローバル変数も一緒に移動させる?$\to$
+    移動先プロセスのグローバル変数の値を書き潰してしまうので破綻!
+  \item グローバル変数を移動させない?$\to$破綻!
+  \end{itemize}
+\end{itemize}
+\up{10}
+\fig{0.4}{slide_motivation2.eps}
+\up{10}
+\begin{itemize}
+\item 「C言語で書けること全て」をサポートできるわけではない
+  \begin{itemize}
+  \item 何らかの\bfred{合理的な「プログラミング制約」}が必要
+  \end{itemize}
+\end{itemize}
+
+\subsection{準備：メモリ領域のモデル化}
+
+\fig{0.36}{slide_memorymodel2.eps}
+
+\subsection{プログラミング制約}
+
+\fig{0.36}{slide_constraint2.eps}
+\up{15}
+\begin{itemize}
+\item 制約：\bfred{DMI\_yield()を呼び出す「瞬間」には，
+    スレッドの実行状態が，
+    そのスレッドのスレッドメモリまたはグローバルメモリに存在しなければならない}
+  \begin{itemize}
+  \item つまり，他のスレッドメモリやプロセスメモリに実行状態が存在してはダメ
+  \end{itemize}
+\item DMI\_yield()呼び出し時「以外」では
+  プロセスメモリを使ってもOK
+\end{itemize}
+
+\subsection{この制約のもとでの「安全な」スレッド移動}
+
+\fig{0.31}{slide_threadmig2.eps}
+
+\begin{itemize}
+\item \bfred{スレッドメモリだけを移動}して，
+  移動元プロセスと移動先プロセスとで同一のアドレスに配置すればOK
+  \begin{itemize}
+  \item 安全な継続実行を保証
+  \end{itemize}
+\item グローバルメモリの移動は不要
+\end{itemize}
+
+\section{スレッド移動の実装}
+
+\subsection{DMIに限らない「一般的な」問題設定}
+
+\begin{itemize}
+\item 「一般的な」問題設定：
+  \begin{itemize}
+  \item プロセスメモリとスレッドメモリがある
+  \item スレッド移動時にスレッドメモリだけ移動させる
+  \end{itemize}
+\item 実装上の課題：
+  \begin{enumerate}
+  \item 課題1：スレッドのチェックポイント・リスタートの実装
+  \item 課題2：random-addressの実装
+  \end{enumerate}
+\end{itemize}
+
+\fig{0.32}{slide_threadmigimpl.eps}
+
+\anime{1}{4}{
+\subsection{課題1：チェックポイント・リスタートの実装\animenumber}
+
+\fig{0.355}{slide_doswitch\animecounter.eps}
+}
+
+\subsection{課題2：random-addressの実装}
+
+\begin{itemize}
+\item 復習：random-address
+  \begin{enumerate}
+  \item 「運が悪くて」アドレスが衝突したら，
+  \item そのノード上に新しいプロセスを生成して，
+  \item そのプロセスの中へスレッドを移動
+  \end{enumerate}
+\end{itemize}
+\up{14}
+\fig{0.28}{slide_random22.eps}
+
+
+\subsection{random-addressにおける要請(1)}
+
+\begin{itemize}
+\item 当然，\bfred{生成直後の新しいプロセスへのスレッド移動は必ず成功}しなければならない
+  \begin{itemize}
+  \item 生成直後のプロセスもすでに何らかのアドレス領域を使っている
+  \item ということは，そのアドレス領域と，移動スレッドが使っているアドレス領域
+    が重ならないことをどうにかして保証しないといけない
+  \end{itemize}
+\end{itemize}
+\up{14}
+\fig{0.26}{slide_random3.eps}
+
+
+\subsection{random-addressにおける要請(2)}
+
+\begin{itemize}
+\item 具体的には何を保証すればいいのか?
+\end{itemize}
+
+\fig{0.34}{slide_randommemorymodel2.eps}
+
+\subsection{解決策}
+
+\fig{0.36}{slide_logicalspace2.eps}
+
+\begin{itemize}
+\item \bfred{プロセスメモリとスレッドメモリを割り当てるアドレス空間を論理的に分離}
+\item どうやって，プロセスメモリとスレッドメモリが割り当てるアドレスを明示的に操作するのか?
+\end{itemize}
+
+\subsection{割り当てるアドレスの明示的な操作}
+
+\fig{0.29}{slide_explicitmmap2.eps}
+\up{16}
+\begin{itemize}
+\item スレッドメモリのアドレスを操作するのは容易
+\item プロセスメモリのアドレスを操作するのは困難
+  \begin{itemize}
+  \item (malloc()/free()などが)\bfred{「処理系が知らないうちに」}
+    システムコールのmmap()/munmap()を呼び出してアドレスを割り当ててしまうから
+  \end{itemize}
+\end{itemize}
+
+\subsection{アプローチ：システムコールをハイジャックする}
+
+\begin{itemize}
+\item どうやるか?
+\end{itemize}
+\up{16}
+\fig{0.35}{slide_hijack.eps}
+
+\subsection{前提知識：システムコールのしくみ}
+
+\up{-30}
+\fig{0.4}{slide_syscall.eps}
+
+\subsection{どのレイヤでハイジャックするか?(1)}
+
+\fig{0.35}{slide_syscall1.eps}
+
+\begin{itemize}
+\item 環境変数LD\_PRELOADを使って共有ライブラリの検索順序を変更し，
+  hijack\_mmap()に処理を飛ばす
+\item 問題点：静的リンクされている場合にはハイジャックできない
+  \begin{itemize}
+  \item 通常，libcは静的リンクされているため，
+    malloc()内部で呼ばれるmmap()をハイジャックできない
+  \end{itemize}
+\end{itemize}
+
+\subsection{どのレイヤでハイジャックするか?(2)}
+
+\fig{0.35}{slide_syscall2.eps}
+
+\begin{itemize}
+\item カーネルモジュールを使ってカーネルのシステムコールテーブルのエントリを書き換え，
+  hijack\_mmap()に処理を飛ばす
+\item 問題点：カーネル2.6では，セキュリティ上の理由から
+  システムコールテーブルの先頭アドレスがexternされておらず，
+  カーネルモジュールから利用できない
+  \begin{itemize}
+  \item カーネルを書き換えれば可能だが移植性に欠ける
+  \end{itemize}
+\end{itemize}
+
+\subsection{どのレイヤでハイジャックするか?(3)}
+
+\fig{0.35}{slide_syscall3.eps}
+
+\begin{itemize}
+\item ptraceを使って，外部プロセスからシステムコール呼び出しを監視し，
+  mmap()が呼ばれた瞬間にhijack\_mmap()に処理を飛ばすよう，
+  コードをインジェクションする
+\item 問題点：ptraceはプロセス監視用であってスレッド監視の機能が不十分
+  \begin{itemize}
+  \item pthreadの場合，プロセス内の「どの」pthreadがシステムコールを呼び出したか判別できない
+  \end{itemize}
+\end{itemize}
+
+\subsection{どのレイヤでハイジャックするか?(4)}
+
+\fig{0.35}{slide_syscall4.eps}
+
+\begin{itemize}
+\item \bfred{libcのコードを書き換えてhijack\_mmap()に処理を飛ばす}
+  \begin{enumerate}
+  \item 静的に書き換える方法：改造libcを作る
+    \begin{itemize}
+    \item 安全な方法だが...
+    \item 問題点1：変更箇所があまりに多い
+    \item 問題点2：各実行環境ごとにlibcを準備する必要があり移植性が低い
+    \end{itemize}
+  \item \bfred{動的に書き換える}方法：採用!
+  \end{enumerate}
+\end{itemize}
+
+\anime{1}{5}{
+\subsection{libcのコード領域を動的に書き換える\animenumber}
+
+\up{-20}
+\fig{0.22}{slide_libchijack\animecounter.eps}
+}
+
+\subsection{ややこしくなったので，まとめ}
+
+\begin{itemize}
+\item そもそもの目的：\bfred{プロセスメモリとスレッドメモリを割り当てるアドレス空間を論理的に分離}
+\item プロセスメモリが割り当てるアドレスを明示的に操作するためには
+  mmap()/munmap()(など)のハイジャックが必要
+\item \bfred{汎用的な}システムコールのハイジャック手法を提案
+\end{itemize}
+\up{10}
+\fig{0.34}{slide_logicalsummary2.eps}
+
+\section{性能評価}
+
+\subsection{random-addressのシミュレーション(1)}
+
+\fig{0.24}{slide_simulation1.eps}
+\up{16}
+\begin{itemize}
+\item アドレス空間：128TB(=$2^{47}$バイト)
+\item プロセス数：65536本
+\item 各プロセスの使用メモリ量：4GB
+\item 各プロセスは\bfred{連続的に}アドレス領域を使用
+\item 全プロセス内の全スレッドを1ノードへとスレッド移動して集約させた結果，
+  そのノードに何本のプロセスが生成されたか?
+  \begin{itemize}
+  \item \bfred{結果：平均4本}
+  \item \bfred{「この規模ではほとんどアドレス衝突は起きない」}
+  \end{itemize}
+\end{itemize}
+
+\subsection{random-addressのシミュレーション(2)}
+
+\fig{0.24}{slide_simulation2.eps}
+\up{16}
+\begin{itemize}
+\item アドレス空間：128TB(=$2^{47}$バイト)
+\item プロセス数：65536本
+\item 各プロセスの使用メモリ量：4GB
+\item 各プロセスは16384個の\bfred{離散的な}アドレス領域を使用
+\item 全プロセス内の全スレッドを1ノードへとスレッド移動して集約させた結果，
+  そのノードに何本のプロセスが生成されたか?
+  \begin{itemize}
+  \item \bfred{結果：平均5828本}
+  \item \bfred{「連続的にアドレスを使うほどアドレス衝突が起きにくい」}
+  \end{itemize}
+\end{itemize}
+
+\subsection{有限要素法：実世界の並列科学技術計算}
+
+\begin{itemize}
+\item 有限要素法による応力解析：
+  \begin{itemize}
+  \item 第2回並列プログラミングコンテストの題材
+  \item 疎行列係数の連立一次方程式の解を反復法で求める
+  \item \bfred{実世界の工学}に基づく非常に収束させづらい問題
+  \end{itemize}
+\item 実験環境：8コア$\times$16ノード，10GbitEthernet
+\end{itemize}
+
+\fig{0.28}{slide_fem.eps}
+
+\subsection{有限要素法：プログラミングの簡単さ}
+
+\begin{itemize}
+\item (計算規模の拡張・縮小非対応のDMIプログラムに対する)\bfred{わずかな変更点}：
+  \begin{itemize}
+  \item 各イテレーションの先頭にDMI\_yield()を追加
+  \item 一部のmalloc()/free()をDMIのAPIに変更
+  \end{itemize}
+\end{itemize}
+
+\fig{0.6}{slide_convergence.eps}
+
+\subsection{有限要素法：実験シナリオ}
+
+\begin{itemize}
+\item 128本のスレッドを生成
+  \begin{itemize}
+  \item 各スレッドはスレッドヒープ領域を500MBの使用(全体では64GB)
+  \item グローバルメモリ領域を335MB使用
+  \end{itemize}
+\item 利用可能なノード数を増減：
+  \begin{itemize}
+  \item ノード1からノード8で実行
+  \item ノード9からノード16を参加させる
+  \item ノード1からノード12を脱退させる
+  \end{itemize}
+\end{itemize}
+\up{6}
+\fig{0.22}{slide_scenario.eps}
+
+\subsection{有限要素法：結果}
+
+\fig{0.34}{slide_cloudresult.eps}
+\up{20}
+\begin{itemize}
+\item \bfred{利用可能な計算資源の動的な増減に対応して並列度を動的に増減できた}
+\item アドレス衝突は発生せず
+\item 移動時間：
+  \begin{itemize}
+  \item 8ノードの参加に伴う120スレッド(58GB)の移動：17.3秒
+  \item 12ノードの脱退に伴う120スレッド(58GB)の移動：30.9秒
+  \end{itemize}
+\end{itemize}
+
+\section{結論}
+
+\subsection{まとめ(1)}
+
+\begin{itemize}
+\item \bfred{DMI：並列計算の規模を「透過的に」拡張・縮小可能なPGAS処理系}
+  \begin{enumerate}
+  \item プログラマは，\bfred{「単に」十分な数のスレッドを生成するだけ}で良い
+  \item あとはDMIが，それら大量のスレッドを利用可能な計算資源に動的にマップして，
+    \bfred{「透過的に」計算規模を拡張・縮小}してくれる
+  \item スレッド間のデータ共有レイヤーとして，\bfred{高性能なグローバルメモリ}が提供される
+  \end{enumerate}
+\end{itemize}
+\up{12}
+\fig{0.16}{slide_dmi.eps}
+
+\subsection{まとめ(2)}
+
+\begin{itemize}
+\item \bfred{random-address}：アドレス空間の大きさに制限されない
+スレッド移動のためのアドレス管理手法
+  \begin{itemize}
+  \item \bfred{「全スレッドができるだけアドレスを連続的に使う」}のが最適
+  \item 汎用的な\bfred{システムコールのハイジャック}手法
+  \end{itemize}
+\end{itemize}
+
+\fig{0.4}{slide_continuous.eps}
+
+\subsection{今後の課題(1)}
+
+\begin{itemize}
+\item \bfred{ノード間スレッドスケジューリングの最適化}
+  \begin{itemize}
+  \item 現実装ではノード間のスレッド数の均等化しか考えていない
+  \item 以下を総合的に考慮：
+    \begin{enumerate}
+    \item ノード間のスレッドの負荷バランス
+    \item スレッド移動に要する時間
+    \item ノード内のプロセス数が増えることに起因するオーバーヘッド
+    \item 各スレッド間でのデータ共有度合い
+    \end{enumerate}
+  \end{itemize}
+\end{itemize}
+
+\subsection{今後の課題(2)}
+
+\fig{0.36}{slide_constraint2.eps}
+\up{15}
+\begin{itemize}
+\item DMI\_yield()呼び出し時に「実行状態がプロセスメモリに存在してはダメ
+  (グローバル変数を使ってはダメ)」という不便なプログラミング制約の撤廃
+  \begin{itemize}
+  \item \bfred{真に「透過的な」スレッド移動}
+  \item 「部分的にアドレス空間が独立したスレッド」をカーネルレベルで実装(詳細略)
+  \end{itemize}
+\end{itemize}
+
+\thankyou
+
+
+\end{document}

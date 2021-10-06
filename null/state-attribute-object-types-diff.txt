@@ -1,0 +1,11 @@
+--- /usr/local/google/home/haraken/chrome-build/src/webkit/Release/layout-test-results/fast/loader/stateobjects/state-attribute-object-types-expected.txt 
++++ /usr/local/google/home/haraken/chrome-build/src/webkit/Release/layout-test-results/fast/loader/stateobjects/state-attribute-object-types-actual.txt 
+@@ -14,7 +14,7 @@
+ PASS history.state is true
+ PASS history.state is 42
+ PASS history.state is "String"
+-PASS history.state == 'Wed Dec 31 1969 16:00:00 GMT-0800 (PST)' is true
++PASS history.state == 'Thu Jan 01 1970 09:00:00 GMT+0900 (JST)' is true
+ PASS history.state == '/foo/gi' is true
+ PASS history.state == '' is true
+ PASS history.state == '[object Object]' is true

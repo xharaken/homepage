@@ -1,0 +1,30 @@
+<html>
+<head>
+</head>
+<body>
+hoge
+<a href="a.html">link to a.html</a>
+<a HREF="a.html">link to a.html</a>
+</body>
+</html>
+<script>
+
+search(document);
+function search(obj) {
+  for (var i = 0; i < obj.childNodes.length; i++) {
+    var node = obj.childNodes[i];
+    if (node != null) {
+      if (node.nodeName == "A") {
+        alert("ddd " + node.getAttribute("href"));
+        alert("eee " + node.getAttribute("HREF"));
+      }
+      //print(node);
+      search(node);
+    }
+  }
+}
+
+function print(node) {
+  alert("nodeType=" + node.nodeType + ", nodeName=" + node.nodeName + ", nodeValue=" + node.nodeValue);
+}
+</script>

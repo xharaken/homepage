@@ -1,0 +1,13 @@
+<body>
+<iframe src="iframe.html"></iframe>
+<script>
+onload = function() {
+  iframe = document.querySelector("iframe");
+  iframeWindow = iframe.contentWindow;
+  console.log(iframeWindow.foo);
+  document.body.removeChild(iframe);
+  iframeWindow.func();
+  console.log(iframeWindow.foo);
+}
+</script>
+</body>

@@ -1,0 +1,167 @@
+% 
+% common.sty @ 2008/9/21
+% 
+
+%%% usepackage
+\usepackage{/home/haraken/article/style/common}
+
+%%% setlength
+\setlength{\oddsidemargin}{-1.7truecm}
+\setlength{\textwidth}{19.4truecm}
+\setlength{\headsep}{1truecm}
+\setlength{\topmargin}{-2.3truecm}
+\setlength{\textheight}{26.7truecm}
+\setlength{\baselineskip}{8pt}
+
+%%% others
+\setcounter{tocdepth}{3}
+
+%%% header
+\def\sectionmark#1{\markboth{#1}{}}
+\let\subsectionmark\markright
+
+\pagestyle{empty}
+\renewcommand{\thepage}{{\cmr\ifnum\c@page=1\else\arabic{page}\fi}}
+\def\@evenhead{%
+  \ifnum\c@section=0\@title\else{\cmr\arabic{section}.}\fi\hskip10pt%
+  \leftmark\hfil\thepage%
+  \begin{picture}(0,0)%
+    \hskip-600pt\color{black}\raisebox{-5pt}{\put(0,0){\rule{1500pt}{0.5pt}}}%
+  \end{picture}%
+}
+\let\@oddhead\@evenhead
+
+
+%%% naming
+% \renewcommand{\prechaptername}{{\pag Chap.}}
+% \renewcommand{\postchaptername}{}
+\renewcommand{\abstractname}{{\Large\pag 概要}\vskip10pt}
+\renewcommand{\contentsname}{{\pag 目次}}
+\renewcommand{\figurename}{図}
+\renewcommand{\tablename}{表}
+\renewcommand{\bibname}{{\pag 参考文献}}
+\renewcommand{\refname}{{\pag 参考文献}}
+
+%%% environment
+
+\newenvironment{pseudo}{%
+  \footnotesize%
+  \setlength{\baselineskip}{8pt}%
+  \VerbatimEnvironment%
+  \begin{Verbatim}%
+  }{\end{Verbatim}}
+
+\def\itemindentlist{0zw}
+\def\parseplist{0em}
+\def\leftmarginlist{2zw}
+\def\rightmarginlist{0zw}
+\def\itemseplist{0zw}
+\def\listparindentlist{0zw}
+\def\up{\vspace*{-\parseplist}}
+
+\renewenvironment{itemize}{%
+  \vspace*{-0.5\normalbaselineskip}%
+  \ifnum \@itemdepth >\thr@@\@toodeep\else%
+  \advance\@itemdepth\@ne%
+  \edef\@itemitem{labelitem\romannumeral\the\@itemdepth}%
+  \expandafter%
+  \list{\csname \@itemitem\endcsname}{%
+    \iftdir%
+    \ifnum \@listdepth=\@ne \topsep.5\normalbaselineskip%
+    \else\topsep\z@\fi%
+    \parskip\z@ \itemsep\z@ \parsep\z@%
+    \labelwidth1zw \labelsep.3zw%
+    \ifnum \@itemdepth =\@ne \leftmargin1zw\relax%
+    \else\leftmargin\leftskip\fi%
+    \advance\leftmargin 1zw%
+    \fi%
+    \def\makelabel##1{\hss\llap{##1}}}%
+  \fi%
+}{\endlist\vspace*{-0.5\normalbaselineskip}}
+
+\renewenvironment{enumerate}{%
+  \vspace*{-0.5\normalbaselineskip}%
+  \ifnum \@enumdepth >\thr@@\@toodeep\else%
+  \advance\@enumdepth\@ne%
+  \edef\@enumctr{enum\romannumeral\the\@enumdepth}%
+  \list{\csname label\@enumctr\endcsname}{%
+    \iftdir%
+    \ifnum \@listdepth=\@ne \topsep.5\normalbaselineskip%
+    \else\topsep\z@\fi%
+    \parskip\z@ \itemsep\z@ \parsep\z@%
+    \labelwidth1zw \labelsep.3zw%
+    \ifnum \@enumdepth=\@ne \leftmargin1zw\relax%
+    \else\leftmargin\leftskip\fi%
+    \advance\leftmargin 1zw%
+    \fi%
+    \usecounter{\@enumctr}%
+    \def\makelabel##1{\hss\llap{##1}}}%
+  \fi%
+}{\endlist\vspace*{-0.5\normalbaselineskip}}
+
+\renewenvironment{description}{%
+  \list{}{%
+    \vspace*{-0.5\normalbaselineskip}%
+    \iftdir%
+    \leftmargin\leftskip \advance\leftmargin3\Cwd%
+    \rightmargin\rightskip%
+    \labelsep=1zw \itemsep\z@%
+    \listparindent\z@ \topskip\z@ \parskip\z@ \partopsep\z@%
+    \fi%
+    \setlength{\itemindent}{\leftmarginlist}%
+    \setlength{\leftmargin}{\leftmarginlist}%
+    \setlength{\rightmargin}{\rightmarginlist}%
+    \setlength{\labelsep}{0zw}%
+    \setlength{\labelwidth}{\leftmarginlist}%
+    \setlength{\itemsep}{\itemseplist}%
+    \setlength{\parsep}{\parseplist}%
+    \setlength{\listparindent}{\listparindentlist}%
+    \def\makelabel{\descriptionlabel}}
+}{\endlist\vspace*{-0.5\normalbaselineskip}}
+\renewcommand{\descriptionlabel}[1]{\normalfont\bfseries #1：}
+
+\renewenvironment{figure}{%
+  \@float{figure}
+}{\vspace*{-1.5em}\end@float}
+\renewenvironment{figure*}{%
+  \@dblfloat{figure}
+}{\vspace*{-0.7em}\end@dblfloat}
+
+%%% style of section
+\renewcommand{\thesection}{\textbf{\cmr\arabic{section}}}
+\renewcommand{\thesubsection}{\textbf{\cmr\arabic{section}.\arabic{subsection}}}
+\renewcommand{\thesubsubsection}{\textbf{\cmr\arabic{section}.\arabic{subsection}.\arabic{subsubsection}}}
+\renewcommand{\thefootnote}{\kern1pt$\star$\kern1pt{\cmr\arabic{footnote}}\;\;}
+
+\renewcommand{\section}{\@ifstar{\@ssection}{\@section}}
+\newcommand{\@section}[1]{%
+  \@startsection{section}{1}{\z@}{8pt}{8pt}%
+  {\reset@font\Large\bfseries}{#1}%
+}
+
+\newcommand{\@ssection}[1]{%
+  \@startsection{section}{11}{\z@}{8pt}{8pt}%
+  {\reset@font\Large\bfseries}{#1}%
+}
+
+\renewcommand{\subsection}{\@ifstar{\@ssubsection}{\@subsection}}
+\newcommand{\@subsection}[1]{%
+  \@startsection{subsection}{2}{\z@}{2pt}{2pt}%
+  {\reset@font\large\bfseries}{#1}%
+}
+
+\newcommand{\@ssubsection}[1]{%
+  \@startsection{subsection}{12}{\z@}{2pt}{2pt}%
+  {\reset@font\large\bfseries}{#1}%
+}
+
+\renewcommand{\subsubsection}{\@ifstar{\@ssubsubsection}{\@subsubsection}}
+\newcommand{\@subsubsection}[1]{%
+  \@startsection{subsubsection}{3}{\z@}{0pt}{0pt}%
+  {\reset@font\bfseries}{#1}%
+}
+
+\newcommand{\@ssubsubsection}[1]{%
+  \@startsection{subsubsection}{13}{\z@}{0pt}{0pt}%
+  {\reset@font\bfseries}{#1}%
+}

@@ -1,0 +1,45 @@
+<html>
+<body>
+<script>
+function gc() {
+  for (var i = 0; i < 100000; i++) {
+    var s = new String("foo");
+  }
+}
+
+function log(str) {
+  var text = document.createTextNode(str);
+  var br = document.createElement("br");
+  document.body.appendChild(text);
+  document.body.appendChild(br);
+}
+
+div = document.createElement("div");
+document.body.appendChild(div);
+document.body.focus();
+div.innerHTML = "<p><p><p><p><p><p><p><p><p><p><span>text1<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>text2</span></p></p></p></p></p></p></p></p></p></p>";
+document.body.focus();
+span = document.querySelector("span");
+document.body.focus();
+div.innerHTML = "";
+document.body.focus();
+log(span.parentNode);
+log(span.parentNode.parentNode);
+log(span.parentNode.parentNode.parentNode);
+document.body.focus();
+
+/*
+log("=== before clearing innerHTML ===");
+log("span = " + span);
+log("span.parentNode = " + span.parentNode);
+
+div.innerHTML = "";
+gc();
+
+log("=== after clearing innerHTML ===");
+log("span = " + span);
+log("span.parentNode = " + span.parentNode);
+*/
+</script>
+</body>
+</html>

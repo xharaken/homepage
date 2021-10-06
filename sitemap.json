@@ -1,0 +1,81 @@
+[
+  {"tag":"fnvlaief", "title":"TOP", "abstract":"原健太朗（haraken）のページです", "file":"html/top.html", "dir":
+    [
+      {"tag":"iwlvz92f", "title":"プロフィール", "abstract":"趣味とか略歴とか", "file":"html/profile.html"},
+      {"tag":"hlkfsljl", "title":"暗号通貨", "abstract":"JohnLawCoinという新しい暗号通貨を開発しています", "file":"html/johnlawcoin.html", "dir": [
+          {"tag":"aallsskl", "title":"GitHubプロジェクトページ", "abstract":"", "link":"https://github.com/xharaken/john-law-coin"},
+          {"tag":"ffkkssjl", "title":"ホワイトペーパー", "abstract":"", "link":"https://github.com/xharaken/john-law-coin/blob/main/docs/whitepaper.pdf"},
+          {"tag":"ddkkajls", "title":"ウォレット", "abstract":"", "link":"https://xharaken.github.io/john-law-coin/wallet/wallet.html"}
+      ]},
+      {"tag":"cnvvvnvv", "title":"料理", "abstract":"日本料理とドイツパンと", "file":"html/cooking.html", "dir": [
+          {"tag":"mfalkejl", "title":"究極のレシピ", "abstract":"", "file":"html/cooking_recipe.html"},
+          {"tag":"ppppqlfj", "title":"2021年", "abstract":"", "file":"html/cooking_2021.html"},
+          {"tag":"rejqlkfk", "title":"2020年", "abstract":"", "file":"html/cooking_2020.html"},
+          {"tag":"nmfdamnm", "title":"2019年以前", "abstract":"", "file":"html/cooking_2019.html"}
+      ]},
+      {"tag":"lfdairef", "title":"南ドイツ散歩", "abstract":"古城、街、教会、新緑、黄葉、ドイツパン", "file":"html/germany.html", "dir":
+       [
+          {"tag":"shfwirrh", "title":"南ドイツ（メルヘンの街）", "abstract":"", "file":"html/germany_marchen.html"},
+          {"tag":"creufaff", "title":"南ドイツ（古城のある街）", "abstract":"", "file":"html/germany_stein.html"},
+          {"tag":"leamacpw", "title":"南ドイツ（アルプスの街）", "abstract":"", "file":"html/germany_alpen.html"},
+          {"tag":"bsffbsnf", "title":"南ドイツ（小さな街）", "abstract":"", "file":"html/germany_village.html"},
+          {"tag":"cccjfkdl", "title":"南ドイツ（美しい自然）", "abstract":"", "file":"html/germany_nature.html"},
+          {"tag":"uiqyurei", "title":"南ドイツ（シュヴァルツヴァルト）", "abstract":"", "file":"html/germany_shwarzwald.html"},
+          {"tag":"bbwrttil", "title":"南ドイツ（華麗なるロココ教会）", "abstract":"", "file":"html/germany_church.html"},
+          {"tag":"ttllaifo", "title":"南ドイツ（ミュンヘン）", "abstract":"", "file":"html/germany_munich.html"},
+          {"tag":"ttlkjklj", "title":"オーストリア（南ドイツとの国境付近）", "abstract":"", "file":"html/germany_austria.html"},
+          {"tag":"cweaurip", "title":"フランス（アルザス地方）", "abstract":"", "file":"html/france_alsace.html"},
+          {"tag":"ppreflmn", "title":"ドイツ（都市）", "abstract":"", "file":"html/germany_city.html"},
+          {"tag":"ghfyrujf", "title":"スイス", "abstract":"", "file":"html/switzerland.html"},
+          {"tag":"xslfhffn", "title":"デンマーク", "abstract":"", "file":"html/denmark.html"},
+          {"tag":"lwqrnfll", "title":"ベルギー", "abstract":"", "file":"html/belguim.html"},
+          {"tag":"erwiweee", "title":"フランス", "abstract":"", "file":"html/france.html"},
+          {"tag":"ywrttlsj", "title":"イギリス", "abstract":"", "file":"html/england.html"}
+       ]
+      },
+      {"tag":"fasdfnnb", "title":"プログラミング教育", "abstract":"学生さん向けのYouTube動画など", "file":"html/cs_education.html"},
+      {"tag":"reajklff", "title":"Chromium", "abstract":"今のおしごと", "file":"html/chromium.html"},
+      {"tag":"o2jfanvk", "title":"昔の研究", "abstract":"大学時代の研究について", "file":"html/research.html"},
+      {"tag":"kw93rmfs", "title":"Twitter", "abstract":"", "link":"http://twitter.com/xharaken"}
+    ]
+  },
+  {"tag":"paewpqlf", "title":"TeXスタイルファイル", "abstract":"昔作ったTeXスタイルファイル", "file":"html/tex.html"},
+  {"tag":"fnadslkg", "raw":"ut/dmi_doc.pdf"},
+  {"tag":"lkjreaqf", "link":"ut/dmi-1.5.0.0.tar.gz"},
+  {"tag":"x02g1g4p", "raw":"ut/cell.pdf"},
+  {"tag":"ql1gu4mb", "raw":"ut/cell_slide.pdf"},
+  {"tag":"a63fvmkh", "raw":"ut/clscon_slide.pdf"},
+  {"tag":"rrejupzq", "raw":"ut/clscon2_slide.pdf"},
+  {"tag":"837ioxdi", "raw":"ut/kakena0.pdf"},
+  {"tag":"y1lztwa1", "raw":"ut/rinko09.pdf"},
+  {"tag":"2hx7jtvy", "raw":"ut/rinko09_slide.pdf"},
+  {"tag":"fjdkslaf", "raw":"ut/shuron_mid_paper.pdf"},
+  {"tag":"plerjafc", "raw":"ut/shuron_mid_slide.pdf"},
+  {"tag":"oiureqll", "raw":"ut/shuron.pdf"},
+  {"tag":"ljrelqff", "raw":"ut/shuron_slide.pdf"},
+  {"tag":"btpwdr22", "raw":"ut/soturon.pdf"},
+  {"tag":"eh294qez", "raw":"ut/soturon_slide.pdf"},
+  {"tag":"8711hjc9", "raw":"ut/soturonmid.pdf"},
+  {"tag":"xd4wnms1", "raw":"ut/soturonmid_slide.pdf"},
+  {"tag":"1ah46yy9", "raw":"ut/swopp09.pdf"},
+  {"tag":"507v3gmb", "raw":"ut/swopp09_slide.pdf"},
+  {"tag":"oiureewf", "raw":"ut/swopp10.pdf"},
+  {"tag":"o9ewqfll", "raw":"ut/swopp10_slide.pdf"},
+  {"tag":"roiewalf", "raw":"ut/IPSJ-TPRO0301002.pdf"},
+  {"tag":"reklwqlf", "raw":"ut/IPSJ-TPRO0401004.pdf"},
+  {"tag":"krefdaaf", "raw":"ut/ipsj11-1.pdf"},
+  {"tag":"poireklf", "raw":"ut/ipsj11-2.pdf"},
+  {"tag":"fewailll", "raw":"ut/hpdc10.pdf"},
+  {"tag":"lkjreaff", "raw":"ut/hpdc10_poster.pdf"},
+  {"tag":"lkjrewqa", "raw":"ut/dmi_spec.pdf"},
+  {"tag":"fjoier43", "raw":"tex/style.tar.gz"},
+  {"tag":"8fvu0own", "raw":"tex/pds3_demo.pdf"},
+  {"tag":"r1j3fq31", "raw":"tex/pds3_demo.tex"},
+  {"tag":"dqjwqe52", "raw":"tex/rinko09_demo.pdf"},
+  {"tag":"9llbn1p8", "raw":"tex/rinko09_demo.tex"},
+  {"tag":"tx1ywac8", "raw":"tex/swopp10_demo.pdf"},
+  {"tag":"f1xcgbwj", "raw":"tex/swopp10_demo.tex"},
+  {"tag":"o9fuaewf", "raw":"tex/doc_demo.pdf"},
+  {"tag":"naelzfdf", "raw":"tex/doc_demo.tex"},
+  {"tag":"iorejkln", "link":"https://docs.google.com/presentation/d/1xaX7akxH7M3KxgHRs1PG9kpU5m9mMMgrsDiVlZxvtPc/edit?usp=sharing"}
+]

@@ -1,0 +1,275 @@
+<h1>TeXスタイルファイル</h1>
+
+<p>
+むかし作った自作のTeXスタイルファイルを配布しています。
+プレゼンテーションスライド用のslide.sty、
+簡易レポート用のreport.sty、長大な資料用のbook.sty、
+2段組み論文用のtwocol.styを用意しています。
+</p>
+
+<p>
+slide.styは、主に学会発表や研究室ミーティングなど、
+論理的な内容を正確に伝えることが重要視される場面で、
+わかりやすく情報量の多いスライドを作るための工夫をしています。
+マージンを極限まで詰めて、本文領域を最大限に拡大しているので、
+通常のプレゼンテーションソフトと比べると、1スライドに入れられる文字量がかなり多くなっています。
+</p>
+
+<h1>見本</h1>
+
+<dl>
+<dt>
+プレゼンテーションスライド用：slide.sty
+</dt>
+<dd>
+<a href="index.php?tag=tx1ywac8">見本のPDF</a>&nbsp;&nbsp;<a href="index.php?tag=f1xcgbwj">TeXのソース</a>
+</dd>
+<dt>
+簡易レポート用：report.sty
+</dt>
+<dd>
+<a href="index.php?tag=8fvu0own">見本のPDF</a>&nbsp;&nbsp;<a href="index.php?tag=r1j3fq31">TeXのソース</a>
+</dd>
+<dt>
+長大な資料用：book.sty
+</dt>
+<dd>
+<a href="index.php?tag=o9fuaewf">見本のPDF（内容的には執筆途中）</a>&nbsp;&nbsp;<a href="index.php?tag=naelzfdf">TeXのソース（内容的には執筆途中）</a>
+</dd>
+<dt>
+2段組み論文用：twocol.sty
+</dt>
+<dd>
+<a href="index.php?tag=dqjwqe52">見本のPDF</a>&nbsp;&nbsp;<a href="index.php?tag=9llbn1p8">TeXのソース</a>
+</dd>
+</dl>
+
+
+<h1>ダウンロード</h1>
+
+スタイルファイル一式は以下からダウンロードできます：
+<p></p>
+<ul>
+<li>
+<a href="index.php?tag=fjoier43">TeXスタイルファイルダウンロード</a> (2010.2.19)
+</li>
+</ul>
+<p></p>
+ダウンロードしたあと、
+<pre>
+$ tar xvf style.tar.gz
+$ cd style
+$ ls
+book.sty  common.sty  report.sty  slide.sty  twocol.sty
+</pre>
+のように展開すると、5つのスタイルファイルが含まれています。
+これらすべてを、TeXソースファイルと同じディレクトリに入れて利用してください。
+内部で、<a href="http://www.biwako.shiga-u.ac.jp/sensei/kumazawa/tex/eclbkbox.html">eclbkbox.sty</a>を使っていますので、
+eclbkbox.styもダウンロードして同じディレクトリに入れてください。
+
+<h1>使い方</h1>
+
+<h2>共通で利用できるコマンド</h2>
+
+次のコマンドがすべてのスタイルファイルで使えます：
+
+<ul>
+<li>
+\date{\mytoday}：\date{\today}の書体をおしゃれにしたもの
+</li>
+<li>
+\red{文章}：文章を赤文字にする
+</li>
+<li>
+\blue{文章}：文章を青文字にする
+</li>
+<li>
+\bfred{文章}：文章を赤文字かつ太字にする
+</li>
+<li>
+\I、\II、\III、\IV、\V、\VI：それぞれI、II、III、IV、V、VIの形を整えたもの
+</li>
+</ul>
+
+<h2>slide.sty</h2>
+
+<h3>基本ルール</h3>
+
+ドキュメントクラスは次のように記述します：
+<pre>
+\documentclass[25pt,landscape,papersize]{jsarticle}
+\usepackage{slide}
+</pre>
+\documentclassのオプションのフォントサイズは25ptに固定です。
+他のフォントサイズを使うとデザインが乱れます。
+<p></p>
+\maketitleで発表タイトルスライド、\sectionで章タイトルスライド、\subsectionで通常スライド1枚が出力されます。
+通常スライドでは、itemize環境、enumerate環境、description環境で内容を記述して、必要に応じて\figコマンドで図を挿入します。
+\figコマンドの第一引数が縮小率、第二引数が図のファイル名です。
+例を示します：
+<pre>
+\documentclass[25pt,papersize,landscape]{jsarticle}  %%% お約束
+\usepackage{slide}  %%% お約束
+\title{アドレス空間の大きさに制限されない\\スレッド移動を実現するPGAS処理系}
+\author{東京大学　原健太朗、田浦健次朗}
+\def\year{2010}
+\def\month{8}
+\def\day{5}
+\date{\mytoday}
+
+\begin{document}
+
+\maketitle  %%% 表紙スライド
+
+\section{序論}  %%% 章スライド
+
+\subsection{背景と目的} %%% 通常スライド
+
+\begin{itemize}
+\item 背景：大規模な並列科学技術計算
+  \begin{itemize}
+  \item 応力解析
+  \item 流体解析
+  \item 地震シミュレーション
+  \item ...
+  \end{itemize}
+\item 目的：\bfred{大規模な並列科学技術計算をクラウド上で効率的に実行できる
+  並列分散プログラミング処理系を作る}
+\end{itemize}
+
+\subsection{クラウドとは何か?}
+
+\begin{itemize}
+\item クラウドのしくみ：
+  \begin{itemize}
+  \item プロバイダがデータセンタを構築・管理して、
+    それらの計算資源をサービスとして提供
+  \item ユーザは、それらの計算資源を従量性課金のもとで必要なときに必要なだけ利用可能
+  \end{itemize}
+\item モデル：\bfred{多数の計算資源を多数のユーザで利用}
+  \begin{itemize}
+  \item 計算資源はどうスケジューリングされるのか?
+  \end{itemize}
+\end{itemize}
+\up{14}   %%% 図の位置を詰める
+\fig{0.26}{slide_cloudservice.eps}  %%% 図を挿入
+
+（中略）
+
+\end{document}
+</pre>
+<p></p>
+図の挿入位置を上下に調節したい場合には\upコマンドが便利です。
+\up{24}と書くと、\vspace*{-24pt}と書いたことと同じ意味になります。
+ちなみに、eps形式のきれいな図を簡単に描くソフトとしてはinkscapeがおすすめです。
+Linuxでも軽快に使えます。
+
+<h3>Thank youスライド</h3>
+
+\thankyouコマンドで、Thank youと描かれたページを出力できます。
+スライドの一番最後に使います：
+<pre>
+\thankyou
+
+\up{-100}
+Are there any questions?
+</pre>
+
+
+<h3>アニメーションスライド</h3>
+
+アニメスライドを作るには、\animeコマンドを使います。
+\animeコマンドは引数を3個取り、
+第一引数はアニメ開始番号、第二引数はアニメ終了番号、第三引数は各アニメスライドのソースです。
+各アニメスライドのソースが、（アニメ終了番号－アニメ開始番号＋1）回繰り返して出力されます。
+各アニメスライドのソース中では、\animecounterコマンドによってそのアニメスライドのアニメ番号を参照でき、
+\animenumberコマンドによってそのアニメスライドのアニメ番号を()で囲った文字列を参照できます。
+具体的には、
+<pre>
+\anime{1}{3}{
+\subsection{アニメ\animenumber}
+このスライドはアニメスライドです
+\fig{0.5}{anime_fig\animecounter.eps}
+}
+</pre>
+と記述しておくと、これは、
+<pre>
+\subsection{アニメ(1)}
+このスライドはアニメスライドです
+\fig{0.5}{anime_fig1.eps}
+
+\subsection{アニメ(2)}
+このスライドはアニメスライドです
+\fig{0.5}{anime_fig2.eps}
+
+\subsection{アニメ(3)}
+このスライドはアニメスライドです
+\fig{0.5}{anime_fig3.eps}
+</pre>
+と記述したことと等価になります。
+つまり、anime_fig1.eps、anime_fig2.eps、anime_fig3.eps、...のような名前の画像ファイルを作っておき、
+あとは\animeコマンドで「ループ」させればOKです。
+
+<h2>report.sty</h2>
+
+ドキュメントクラスは次のように記述します：
+<pre>
+\documentclass[10pt]{jsarticle}
+\usepackage{report}
+</pre>
+\documentclassのオプションのフォントサイズとしては10pt、12pt、14ptなどを使用できますが、
+あまり大きくしたり小さくしたりするとレイアウトが乱れます。
+10ptもしくは12ptがおすすめです。
+<p></p>
+文法は、通常のjsarticleと同様で、\section、\subsection、\subsubsection、
+itemize環境、enumerate環境、description環境など使って記述します。
+<p></p>
+report.sty独自の環境として、プログラムを記述するためのcode環境があります。
+code環境内に記述した文章が枠囲みになります。
+複数ページにまたがっても問題ありません。
+たとえば次のように使います：
+<pre>
+ソースコードも書いてみます。
+次の関数は、100以下の任意の整数xに対して常に91を出力します：
+\begin{code}
+#define N 100
+
+int MacCarthy(int x)
+{
+  if(x > N) return x - 10;
+  return MacCarthy(MacCarthy(x + 11));
+}
+\end{code}
+</pre>
+<p></p>
+
+<h2>book.sty</h2>
+
+ドキュメントクラスは次のように記述します：
+<pre>
+\documentclass[report,10pt]{jsbook}
+\usepackage{book}
+</pre>
+\documentclassのオプションのフォントサイズとしては10pt、12pt、14ptなどを使用できますが、
+あまり大きくしたり小さくしたりするとレイアウトが乱れます。
+10ptもしくは12ptがおすすめです。
+
+文法は、通常のjsbookと同様で、\chapter、\section、\subsection、\subsubsection、
+itemize環境、enumerate環境、description環境など使って記述します。
+
+report.styと同様にcode環境を利用できます。
+
+<h2>twocol.sty</h2>
+
+ドキュメントクラスは次のように記述します：
+<pre>
+\documentclass[report,10pt]{jsbook}
+\usepackage{twocol}
+</pre>
+\documentclassのオプションのフォントサイズとしては10pt、12pt、14ptなどを使用できますが、
+あまり大きくしたり小さくしたりするとレイアウトが乱れます。
+10ptもしくは12ptがおすすめです。
+
+<h1>ライセンス</h1>
+
+再利用、再配布、改変など無断で自由にご利用していただいてかまいません。

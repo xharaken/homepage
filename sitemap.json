@@ -3,9 +3,7 @@
     [
       {"tag":"iwlvz92f", "title":"プロフィール", "abstract":"趣味とか略歴とか", "file":"html/profile.html"},
       {"tag":"hlkfsljl", "title":"暗号通貨", "abstract":"JohnLawCoinという新しい暗号通貨を開発しています", "file":"html/johnlawcoin.html", "dir": [
-          {"tag":"aallsskl", "title":"GitHubプロジェクトページ", "abstract":"", "link":"https://github.com/xharaken/john-law-coin"},
-          {"tag":"ffkkssjl", "title":"ホワイトペーパー", "abstract":"", "link":"https://github.com/xharaken/john-law-coin/blob/main/docs/whitepaper.pdf"},
-          {"tag":"ddkkajls", "title":"ウォレット", "abstract":"", "link":"https://xharaken.github.io/john-law-coin/wallet/wallet.html"}
+          {"tag":"aallsskl", "title":"GitHubプロジェクトページ", "abstract":"", "link":"https://github.com/xharaken/john-law-coin"}
       ]},
       {"tag":"cnvvvnvv", "title":"料理", "abstract":"日本料理とドイツパンと", "file":"html/cooking.html", "dir": [
           {"tag":"mfalkejl", "title":"究極のレシピ", "abstract":"", "file":"html/cooking_recipe.html"},

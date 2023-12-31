@@ -1,7 +1,7 @@
 <h1>ChromiumとBlink</h1>
 
 <p>
-2011年にGoogleに入社してからずっとChromiumのレンダリングエンジンである<a href="http://www.chromium.org/blink">Blink</a>の開発をやっています。専門分野はブラウザアーキテクチャ全般で、メモリアロケータ（PartitionAlloc）、ガベージコレクション（Oilpan）、メモリ管理のセキュリティ強化（MiraclePtr）、BlinkとV8のバインディング、Web IDLコンパイラ、ページローディングの高速化（Back Forward Cache、Prerendering）、大規模なコードリファクタリング（Onion Soup）などをやってきました。どんなプロジェクトもコードレベルで理解したいという思いがあって、ここ数年はChromiumのコードレビューを世界で一番やってる人になっています。Chromeブラウザの東京チームをリードしています。
+2011年にGoogleに入社してからずっとChromiumのレンダリングエンジンである<a href="http://www.chromium.org/blink">Blink</a>の開発をやっています。専門分野はブラウザアーキテクチャ全般で、メモリアロケータ（PartitionAlloc）、ガベージコレクション（Oilpan）、メモリ管理のセキュリティ強化（MiraclePtr）、BlinkとV8のバインディング、Web IDLコンパイラ、ページローディングの高速化（Back Forward Cache、Prerendering）、大規模なコードリファクタリング（Onion Soup）などをやってきました。どんなプロジェクトもコードレベルで理解したいという思いがあって、一時期はChromiumのコードレビューを世界で一番やってる人になってました。Chromeブラウザの東京チームをリードしています。
 </p>
 
 <h1>ドキュメント置き場</h1>
@@ -11,6 +11,12 @@
 </p>
 
 <ul>
+  <li><a href="https://docs.google.com/document/d/1afVtPcXEHZpzZQHkI85uE_AsJdYQjhz5teynDyUhBvg/edit#heading=h.b966ynmd5x2b">MiracleObject (2023 Jun)</a></li>
+  <li><a href="https://docs.google.com/document/d/1c3jQqhUKQCLvO_d3MXZe7Z2E3FUGGBmIpgeX8TyzM9s/edit?resourcekey=0-MMntudZFKjPBzCVxVU31fg#heading=h.2r7dtni77yvu">ADVANCED_MEMORY_SAFETY_CHECKS() (2023 Mar)</a></li>
+  <li><a href="https://docs.google.com/document/d/1h2BSBJnU5vD-xbj1O-wniMtXMyBrQSE29-Uk_BBLxL4/edit#heading=h.7nki9mck5t64">BestEffortServiceWorker (2023 Feb)</a></li>
+  <li><a href="https://docs.google.com/document/d/1jI-Itz-_kr8euAdZZI_cm0XY18HsIkc18XFiEL32jRQ/edit#heading=h.b3zgidygw3nn">blink::SharedMemoryCache (2023 Feb)</a></li> 
+  <li><a href="https://docs.google.com/document/d/1xfGa_IMtFZiQ3beOmkncEafODwn4U90ZyL4NfPaAtDY/edit?resourcekey=0-89BZl1SVILB6ylOHula0IA#heading=h.ug7k4kk8zc84">Lightweight UaF Detector (2022 Dec)</a></li>
+  <li><a href="https://docs.google.com/document/d/15qq2wr7Xza5awgJAfXUzO1UZFAG7lXDm4K8hd7vC3GU/edit#heading=h.p5mua6e7y11x">Dangling Pointer Detector (2021 Dec)</a></li>
   <li><a href="https://docs.google.com/document/d/1pnnOAIz_DMWDI4oIOFoMAqLnf_MZ2GsrJNb_dbQ3ZBg/edit#heading=h.p1fqfm5alk4a">MiraclePtr<T> One Pager (2021 July)</a></li>
   <li><a href="https://docs.google.com/document/d/1jPOHdPH5zvyaL3z2X-r_drz0qDrLB8SOQAGKQxHWXSI/edit#heading=h.pclyw7u82dot">Deterministic stack scanning (2020 Sep)</a></li>
   <li><a href="https://docs.google.com/document/d/1BTEeY2YJBiT39w_t7kzrAJPjY5L-TcMrnksBM0AOV4w/edit#heading=h.o3evpo8ggebi">Pointer compression with MiraclePtr (2020 Sep)</a></li>

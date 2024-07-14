@@ -290,7 +290,7 @@ function build_header($location)
   $str .= "<meta name=\"description\" content=\"原健太朗, Kentaro Hara, xharaken, haraken.info, ハラケン, はらけん\" />\n";
   $str .= "<meta name=\"keywords\" content=\"原健太朗, Kentaro Hara, xharaken, haraken.info, ハラケン, はらけん\" />\n";
   $str .= "<title>";
-  $str .= "原健太朗のページ";
+  $str .= "Kentaro Hara のページ";
   if(isset($cwd["title"]))
     {
       $str .= " : ".$cwd["title"];
@@ -317,7 +317,7 @@ function build_header($location)
   $str .= "<div class=\"base\">\n";
   $str .= "<div class=\"top\">\n";
   $str .= "<div class=\"logo\">\n";
-  $str .= "原健太朗のページ\n";
+  $str .= "Kentaro Hara のページ\n";
   $str .= "</div>\n";
   $str .= "</div>\n";
   $str .= "<div class=\"background1\">\n";

@@ -298,19 +298,14 @@ function build_header($location)
   $str .= "</title>\n";
   $str .= "<link rel=\"stylesheet\" href=\"".SYSTEM_DIR."style.css\" type=\"text/css\" />\n";
 
-/*
-  $str .= "<script type=\"text/javascript\">\n";
-  $str .= "var _gaq = _gaq || [];\n";
-  $str .= "_gaq.push(['_setAccount', 'UA-25571885-1']);\n";
-  $str .= "_gaq.push(['_trackPageview']);\n";
-  $str .= "(function() {\n";
-  $str .= "  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;\n";
-  $str .= "  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';\n";
-  $str .= "  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);\n";
-  $str .= "})();\n";
-  $str .= "</script>\n";
-*/
-  
+  $str .= "<script async src=\"https://www.googletagmanager.com/gtag/js?id=G-Z26R3NTJ3X\"></script>";
+  $str .= "<script>";
+  $str .= "window.dataLayer = window.dataLayer || [];";
+  $str .= "function gtag(){dataLayer.push(arguments);}";
+  $str .= "gtag('js', new Date());";
+  $str .= "gtag('config', 'G-Z26R3NTJ3X');"
+  $str .= "</script>";
+
   $str .= "</head>\n";
   $str .= "<body>\n";
   

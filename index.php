@@ -298,15 +298,13 @@ function build_header($location)
   $str .= "</title>\n";
   $str .= "<link rel=\"stylesheet\" href=\"".SYSTEM_DIR."style.css\" type=\"text/css\" />\n";
 
-/*
-  $str .= "<script async src=\"https://www.googletagmanager.com/gtag/js?id=G-Z26R3NTJ3X\"></script>";
-  $str .= "<script>";
-  $str .= "window.dataLayer = window.dataLayer || [];";
-  $str .= "function gtag(){dataLayer.push(arguments);}";
-  $str .= "gtag('js', new Date());";
-  $str .= "gtag('config', 'G-Z26R3NTJ3X');"
-  $str .= "</script>";
-*/
+  $str .= "<script async src=\"https://www.googletagmanager.com/gtag/js?id=G-Z26R3NTJ3X\"></script>\n";
+  $str .= "<script>\n";
+  $str .= "window.dataLayer = window.dataLayer || [];\n";
+  $str .= "function gtag(){dataLayer.push(arguments);}\n";
+  $str .= "gtag('js', new Date());\n";
+  $str .= "gtag('config', 'G-Z26R3NTJ3X');\n";
+  $str .= "</script>\n";
 
   $str .= "</head>\n";
   $str .= "<body>\n";

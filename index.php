@@ -298,6 +298,7 @@ function build_header($location)
   $str .= "</title>\n";
   $str .= "<link rel=\"stylesheet\" href=\"".SYSTEM_DIR."style.css\" type=\"text/css\" />\n";
 
+/*
   $str .= "<script async src=\"https://www.googletagmanager.com/gtag/js?id=G-Z26R3NTJ3X\"></script>";
   $str .= "<script>";
   $str .= "window.dataLayer = window.dataLayer || [];";
@@ -305,6 +306,7 @@ function build_header($location)
   $str .= "gtag('js', new Date());";
   $str .= "gtag('config', 'G-Z26R3NTJ3X');"
   $str .= "</script>";
+*/
 
   $str .= "</head>\n";
   $str .= "<body>\n";

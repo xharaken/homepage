@@ -7,6 +7,7 @@
       ]},
       {"tag":"cnvvvnvv", "title":"料理", "abstract":"日本料理とドイツパンと", "file":"html/cooking.html", "dir": [
           {"tag":"mfalkejl", "title":"究極のレシピ", "abstract":"", "file":"html/cooking_recipe.html"},
+          {"tag":"qjelanff", "title":"2024年", "abstract":"", "file":"html/cooking_2024.html"},
           {"tag":"fdaoilfj", "title":"2023年", "abstract":"", "file":"html/cooking_2023.html"},
           {"tag":"pplpqlfj", "title":"2022年", "abstract":"", "file":"html/cooking_2022.html"},
           {"tag":"ppppqlfj", "title":"2021年", "abstract":"", "file":"html/cooking_2021.html"},
@@ -26,7 +27,9 @@
           {"tag":"ttlkjklj", "title":"オーストリア（南ドイツとの国境付近）", "abstract":"", "file":"html/germany_austria.html"},
           {"tag":"cweaurip", "title":"フランス（アルザス地方）", "abstract":"", "file":"html/france_alsace.html"},
           {"tag":"ppreflmn", "title":"ドイツ（都市）", "abstract":"", "file":"html/germany_city.html"},
-          {"tag":"ghfyrujf", "title":"スイス", "abstract":"", "file":"html/switzerland.html"},
+          {"tag":"ghfyrujf", "title":"スイス（ドイツ語圏）", "abstract":"", "file":"html/switzerland_german.html"},
+          {"tag":"aldkwrja", "title":"スイス（フランス語圏）", "abstract":"", "file":"html/switzerland_french.html"},
+          {"tag":"namzelfh", "title":"スイス（イタリア語圏）", "abstract":"", "file":"html/switzerland_italian.html"},
           {"tag":"xslfhffn", "title":"デンマーク", "abstract":"", "file":"html/denmark.html"},
           {"tag":"lwqrnfll", "title":"ベルギー", "abstract":"", "file":"html/belguim.html"},
           {"tag":"lasjflah", "title":"オランダ", "abstract":"", "file":"html/netherlands.html"},
